@@ -5,6 +5,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AppNavbar from "@/components/AppNavbar";
+import { supabase } from "@/integrations/supabase/client";
 
 type Employee = {
   id: string;
@@ -14,8 +15,6 @@ type Employee = {
 };
 
 const fetchEmployees = async (): Promise<Employee[]> => {
-  const { createClient } = await import("@/integrations/supabase/client");
-  const supabase = createClient();
   const { data, error } = await supabase.from("employees").select();
   if (error) throw error;
   return data || [];
