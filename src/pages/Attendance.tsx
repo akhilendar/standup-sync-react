@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +113,7 @@ export default function Attendance() {
     setAttendance(map);
     setEditedAtt({});
     setEditing(false);
-    // Google Sheets sync via CORS proxy
+    // Google Sheets sync via CORS proxy TO YOUR NEW DEPLOYMENT
     const dataToSend = employees.map((emp) => ({
       standup_id: standup.id,
       standup_time: new Date(standup.scheduled_at).toLocaleString(),
@@ -126,7 +125,7 @@ export default function Attendance() {
     await fetch(
       "https://corsproxy.io/?" +
         encodeURIComponent(
-          "https://script.google.com/macros/s/AKfycbxVzcsOBMPMic58wrjZeTMDgVfqfyHGKgxGLbi__GwLowlwYe09NuHqZ5uNMoPPAT4zvQ/exec"
+          "https://script.google.com/macros/s/AKfycbxT25q53zD6Rwffh9vxyODeW9Q5HwXg6SBY-yCvVE5XWj1ClAe_hOQPLUuOOOR08y6Zuw/exec"
         ),
       {
         method: "POST",
@@ -180,7 +179,7 @@ export default function Attendance() {
       const res = await fetch(
         "https://corsproxy.io/?" +
           encodeURIComponent(
-            "https://script.google.com/macros/s/AKfycbxVzcsOBMPMic58wrjZeTMDgVfqfyHGKgxGLbi__GwLowlwYe09NuHqZ5uNMoPPAT4zvQ/exec"
+            "https://script.google.com/macros/s/AKfycbxT25q53zD6Rwffh9vxyODeW9Q5HwXg6SBY-yCvVE5XWj1ClAe_hOQPLUuOOOR08y6Zuw/exec"
           ),
         {
           method: "POST",
@@ -329,4 +328,3 @@ export default function Attendance() {
     </div>
   );
 }
-
