@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import AppNavbar from "@/components/AppNavbar";
+import AdminScheduleStandup from "@/components/AdminScheduleStandup";
 import { supabase } from "@/integrations/supabase/client";
 import "./Attendance.css";
 
@@ -52,59 +52,63 @@ export default function Standups() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(120deg, #e6eafc 0%, #c8eafc 50%, #f1f4f9 100%)" }}>
       <AppNavbar />
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="card-style" style={{ maxWidth: 520 }}>
-          <h1 style={{ marginBottom: 13 }}>Team Standups</h1>
-          <div className="banner" style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}>
-            Stay on track with team standups! <span role="img" aria-label="microphone">🎤</span>
-          </div>
-          <div style={{ marginTop: 18, color: "#238", fontWeight: 400, fontSize: "1.04rem" }}>
-            See who joined today's standup and stay connected. Checkmarks show who attended.
-          </div>
-          <div style={{ marginTop: 30 }}>
-            <div style={{ fontWeight: 600, color: "#267", marginBottom: 10, fontSize: "1.08rem" }}>People</div>
-            <div>
-              {employees.length === 0 && (
-                <span style={{ color: "#777" }}>No data</span>
-              )}
-              <ul style={{ paddingLeft: 0, margin: 0 }}>
-                {employees.map(emp => {
-                  const present = attendance[emp.id]?.status === "Present";
-                  return (
-                    <li
-                      key={emp.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: 9,
-                        fontWeight: 500,
-                        color: present ? "#20af6e" : "#cb9620",
-                        fontSize: "1.025rem"
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={present}
-                        readOnly
-                        disabled={standupCompleted}
-                        style={{
-                          marginRight: 12,
-                          accentColor: present ? "#11b26b" : "#beae6c",
-                          width: "18px",
-                          height: "18px",
-                          cursor: "default"
-                        }}
-                      />
-                      <span>{emp.name}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+        <div style={{ width: "100%", maxWidth: 620 }}>
+          {/* Standup scheduling option (add schedule form here) */}
+          <AdminScheduleStandup />
+          <div className="card-style" style={{ maxWidth: 520, margin: "30px auto 0" }}>
+            <h1 style={{ marginBottom: 13 }}>Team Standups</h1>
+            <div className="banner" style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}>
+              Stay on track with team standups! <span role="img" aria-label="microphone">🎤</span>
             </div>
-            {standupCompleted && (
-              <div className="banner" style={{ background: "#e5ffe5", color: "#159f46", marginTop: 16 }}>
-                Standup completed!
+            <div style={{ marginTop: 18, color: "#238", fontWeight: 400, fontSize: "1.04rem" }}>
+              See who joined today's standup and stay connected. Checkmarks show who attended.
+            </div>
+            <div style={{ marginTop: 30 }}>
+              <div style={{ fontWeight: 600, color: "#267", marginBottom: 10, fontSize: "1.08rem" }}>People</div>
+              <div>
+                {employees.length === 0 && (
+                  <span style={{ color: "#777" }}>No data</span>
+                )}
+                <ul style={{ paddingLeft: 0, margin: 0 }}>
+                  {employees.map(emp => {
+                    const present = attendance[emp.id]?.status === "Present";
+                    return (
+                      <li
+                        key={emp.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginBottom: 9,
+                          fontWeight: 500,
+                          color: present ? "#20af6e" : "#cb9620",
+                          fontSize: "1.025rem"
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={present}
+                          readOnly
+                          disabled={standupCompleted}
+                          style={{
+                            marginRight: 12,
+                            accentColor: present ? "#11b26b" : "#beae6c",
+                            width: "18px",
+                            height: "18px",
+                            cursor: "default"
+                          }}
+                        />
+                        <span>{emp.name}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-            )}
+              {standupCompleted && (
+                <div className="banner" style={{ background: "#e5ffe5", color: "#159f46", marginTop: 16 }}>
+                  Standup completed!
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
