@@ -13,12 +13,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 
-// Remove Login tab from header and update avatar/profile menu
+// Do not define Employees link; only show for admin
 const links = [
   { path: "/", label: "Home" },
   { path: "/standups", label: "Standups" },
-  { path: "/attendance", label: "Attendance" },
-  { path: "/admin/employees", label: "Employees" }
+  { path: "/attendance", label: "Attendance" }
 ];
 
 export default function AppNavbar() {
@@ -38,6 +37,9 @@ export default function AppNavbar() {
     if (profile) memberLogout();
   };
 
+  // Determine if current user is an admin
+  const isAdmin = !!admin;
+
   return (
     <nav className="w-full flex justify-center bg-background border-b">
       <ul className="flex gap-4 py-4">
@@ -54,6 +56,20 @@ export default function AppNavbar() {
             </Link>
           </li>
         ))}
+        {/* Show Employees tab only for admin */}
+        {isAdmin && (
+          <li>
+            <Link
+              to="/admin/employees"
+              className={cn(
+                "py-2 px-3 rounded hover:bg-muted/40 transition-colors",
+                pathname === "/admin/employees" && "font-semibold bg-muted"
+              )}
+            >
+              Employees
+            </Link>
+          </li>
+        )}
         {!loading && isLoggedIn && (
           <li>
             <DropdownMenu>
