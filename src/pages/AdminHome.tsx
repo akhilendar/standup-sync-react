@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AppNavbar from "@/components/AppNavbar";
 import AdminScheduleStandup from "@/components/AdminScheduleStandup";
+import AdminStandupDashboard from "@/components/AdminStandupDashboard";
 
 const AdminHome = () => {
   const { admin, logout } = useAdminAuth();
@@ -29,7 +30,9 @@ const AdminHome = () => {
           <div className="mb-6">
             <span className="font-semibold">Welcome, {admin?.email}!</span>
           </div>
-          <div className="space-y-4">
+          <AdminScheduleStandup />
+          <AdminStandupDashboard />
+          <div className="space-y-4 mt-6">
             <Button
               className="w-full"
               variant="default"
@@ -45,7 +48,6 @@ const AdminHome = () => {
               Manage Attendance
             </Button>
           </div>
-          <AdminScheduleStandup />
         </CardContent>
       </Card>
     </div>
@@ -53,3 +55,4 @@ const AdminHome = () => {
 };
 
 export default AdminHome;
+
