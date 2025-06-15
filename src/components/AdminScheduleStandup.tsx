@@ -25,6 +25,10 @@ export default function AdminScheduleStandup() {
       .from("standups")
       .select("*")
       .order("scheduled_at", { ascending: true });
+    if (error) {
+      toast({ title: "Error loading standups", description: error.message, variant: "destructive" });
+      console.error("Error fetching standups:", error);
+    }
     if (data) setStandups(data as Standup[]);
     setLoading(false);
   };
@@ -42,7 +46,10 @@ export default function AdminScheduleStandup() {
   // Schedule standup for today at selected time
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) return;
+    if (!profile) {
+      toast({ title: "Not logged in", variant: "destructive" });
+      return;
+    }
     if (!time) {
       toast({ title: "Please select a time", variant: "destructive" });
       return;
@@ -53,18 +60,31 @@ export default function AdminScheduleStandup() {
     const [hours, minutes] = time.split(":").map(Number);
     today.setHours(hours, minutes, 0, 0);
     const scheduled_at = today.toISOString(); // ISO with time
-    const { error } = await supabase.from("standups").insert([
+
+    // Insert and debug errors
+    const { data, error } = await supabase.from("standups").insert([
       {
-        scheduled_at,      // store ISO datetime
+        scheduled_at,
         created_by: profile.id
       }
-    ]);
+    ]).select().single();
+
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      console.error("Insert error:", error);
+      setLoading(false);
+      return;
+    }
+    if (!data) {
+      toast({ title: "Error", description: "Failed to insert standup (no data returned)", variant: "destructive" });
+      setLoading(false);
+      return;
     } else {
       toast({ title: "Standup Scheduled" });
       setTime("");
-      fetchStandups();
+      // Insert result debug:
+      console.log("Inserted standup:", data);
+      await fetchStandups();
     }
     setLoading(false);
   };
@@ -94,12 +114,13 @@ export default function AdminScheduleStandup() {
               className="ml-2 w-28"
               min="06:00"
               max="23:00"
+              data-testid="schedule-time-input"
             />
-            <Button type="button" size="sm" className="ml-2" variant="ghost" onClick={setToNowTime}>
+            <Button type="button" size="sm" className="ml-2" variant="ghost" onClick={setToNowTime} data-testid="now-btn">
               Now
             </Button>
           </div>
-          <Button type="submit" disabled={loading}>Add</Button>
+          <Button type="submit" disabled={loading} data-testid="add-btn">Add</Button>
         </form>
         <h4 className="font-semibold mb-2">All Scheduled Standups:</h4>
         {loading ? (
@@ -129,3 +150,4 @@ export default function AdminScheduleStandup() {
     </Card>
   );
 }
+
