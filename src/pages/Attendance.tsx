@@ -17,7 +17,7 @@ export default function Attendance() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      setEditing(false); // always exit edit mode if reloading 
+      setEditing(false);
       const { data: empData } = await supabase.from("employees").select("*");
       setEmployees(empData || []);
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -52,7 +52,7 @@ export default function Attendance() {
   // Handler: initiate edit mode
   const handleEdit = () => {
     const initial = Object.fromEntries(
-      employees.map(emp => [emp.id, attendance[emp.id]?.status || "Absent"])
+      employees.map(emp => [emp.id, attendance[emp.id]?.status || "Missed"])
     );
     setEditedAtt(initial);
     setEditing(true);
@@ -80,32 +80,27 @@ export default function Attendance() {
       setLoading(false);
       return;
     }
-    // Upsert attendance for each employee: update if present, insert if not
+    // Upsert attendance for each employee
     const bulk = employees.map(emp => {
       return {
         standup_id: standup.id,
         employee_id: emp.id,
-        status: editedAtt[emp.id] || "Absent"
+        status: editedAtt[emp.id] || "Missed"
       };
     });
-    // Upsert based on standup_id + employee_id composite uniqueness
     for (let row of bulk) {
       const found = attendance[row.employee_id];
       if (found) {
-        // update
         await supabase
           .from("attendance")
           .update({ status: row.status })
           .eq("employee_id", row.employee_id)
           .eq("standup_id", row.standup_id);
       } else {
-        // insert
-        await supabase
-          .from("attendance")
-          .insert([{ ...row }]);
+        await supabase.from("attendance").insert([{ ...row }]);
       }
     }
-    // After saving, reload state from DB (also ensures attendance/editedAtt update)
+    // After saving, reload state from DB
     const { data: attData } = await supabase
       .from("attendance")
       .select("*")
@@ -117,15 +112,14 @@ export default function Attendance() {
     setAttendance(map);
     setEditedAtt({});
     setEditing(false);
-
-    // Google Sheets re-sync as before
+    // Google Sheets sync as before
     const dataToSend = employees.map((emp) => ({
       standup_id: standup.id,
       standup_time: new Date(standup.scheduled_at).toLocaleString(),
       employee_id: emp.id,
       employee_name: emp.name,
       employee_email: emp.email,
-      status: map[emp.id]?.status || "Absent",
+      status: map[emp.id]?.status || "Missed",
     }));
     await fetch(
       "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
@@ -156,7 +150,7 @@ export default function Attendance() {
       employee_id: emp.id,
       employee_name: emp.name,
       employee_email: emp.email,
-      status: attendance[emp.id]?.status || "Absent",
+      status: attendance[emp.id]?.status || "Missed",
     }));
     await fetch(
       "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
@@ -208,8 +202,8 @@ export default function Attendance() {
                         key={emp.id}
                         className={
                           (editing
-                            ? (editedAtt[emp.id] === "Present" ? "table-row-present" : "table-row-absent")
-                            : (attendance[emp.id]?.status === "Present" ? "table-row-present" : "table-row-absent"))
+                            ? (editedAtt[emp.id] === "Present" ? "table-row-present" : editedAtt[emp.id] === "Missed" ? "table-row-missed" : "table-row-absent")
+                            : (attendance[emp.id]?.status === "Present" ? "table-row-present" : attendance[emp.id]?.status === "Missed" ? "table-row-missed" : "table-row-absent"))
                         }
                       >
                         <td>{emp.name}</td>
@@ -232,10 +226,12 @@ export default function Attendance() {
                               data-testid={`status-select-${emp.id}`}
                             >
                               <option value="Present">Present</option>
+                              <option value="Missed">Missed</option>
                               <option value="Absent">Absent</option>
+                              <option value="Not Available">Not Available</option>
                             </select>
                           ) : (
-                            attendance[emp.id]?.status || <span style={{ color: "#be8808" }}>Absent</span>
+                            attendance[emp.id]?.status || <span style={{ color: "#be8808" }}>Missed</span>
                           )}
                         </td>
                         {editing && (
@@ -273,3 +269,5 @@ export default function Attendance() {
     </div>
   );
 }
+
+// Note: src/pages/Attendance.tsx is now quite long (over 276 lines). It is recommended to refactor this page into smaller components for maintainability.

@@ -10,6 +10,11 @@
   color: #23ac71;
 }
 
+.table-row-missed td {
+  background: linear-gradient(90deg, #ffe1be 0%, #fff5e8 100%);
+  color: #e39a26;
+}
+
 .table-row-absent td {
   background: linear-gradient(90deg, #fcf7e6 0%, #fee8d8 100%);
   color: #dea33b;

@@ -1,10 +1,53 @@
 
-// Standups page: Improve content and style, remove admin/next standup info.
-import React from "react";
+import React, { useEffect, useState } from "react";
 import AppNavbar from "@/components/AppNavbar";
-import "./Attendance.css"; // Leverage the global table/card/banner CSS for visual consistency
+import { supabase } from "@/integrations/supabase/client";
+import "./Attendance.css";
+
+type Employee = { id: string; name: string; email: string };
+type Attendance = { employee_id: string; status: string | null };
 
 export default function Standups() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [attendance, setAttendance] = useState<Record<string, Attendance>>({});
+  const [standupCompleted, setStandupCompleted] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      // Fetch employees list
+      const { data: empData } = await supabase.from("employees").select("*");
+      setEmployees(empData || []);
+      // Fetch today's standup
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const { data: standup } = await supabase
+        .from("standups")
+        .select("*")
+        .gte("scheduled_at", todayStr + "T00:00:00.000Z")
+        .lt("scheduled_at", todayStr + "T23:59:59.999Z")
+        .order("scheduled_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (standup) {
+        // Fetch attendance for this standup
+        const { data: attData } = await supabase
+          .from("attendance")
+          .select("*")
+          .eq("standup_id", standup.id);
+        const map: Record<string, Attendance> = {};
+        attData?.forEach((a) => {
+          map[a.employee_id] = a;
+        });
+        setAttendance(map);
+        // Let's say standup is complete if all employees have any attendance marked.
+        setStandupCompleted(attData && attData.length === empData?.length && attData.length > 0);
+      } else {
+        setAttendance({});
+        setStandupCompleted(false);
+      }
+    }
+    fetchData();
+  }, []);
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(120deg, #e6eafc 0%, #c8eafc 50%, #f1f4f9 100%)" }}>
       <AppNavbar />
@@ -12,20 +55,56 @@ export default function Standups() {
         <div className="card-style" style={{ maxWidth: 520 }}>
           <h1 style={{ marginBottom: 13 }}>Team Standups</h1>
           <div className="banner" style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}>
-            Welcome to the team standup page&nbsp;🎤
+            Stay on track with team standups! <span role="img" aria-label="microphone">🎤</span>
           </div>
-          <div style={{ marginTop: 22, color: "#155a84", lineHeight: 1.7, fontWeight: 500, fontSize: "1.07rem"}}>
-            <p>
-              This page lets you track your daily standup meetings and team attendance.
-              Standups help everyone stay accountable and aligned, improving overall collaboration. 
-              If you're an admin, you can schedule standups and monitor team participation. 
-              Employees can review their attendance history and stay on top of important updates.
-            </p>
-            <ul style={{ marginTop: 17, marginLeft: 20, color: "#1d7b64", fontWeight: 600 }}>
-              <li>⏰ View all scheduled standups in one place</li>
-              <li>✅ See your attendance status for recent standups</li>
-              <li>📅 Keep your team on track and connected</li>
-            </ul>
+          <div style={{ marginTop: 18, color: "#238", fontWeight: 400, fontSize: "1.04rem" }}>
+            See who joined today's standup and stay connected. Checkmarks show who attended.
+          </div>
+          <div style={{ marginTop: 30 }}>
+            <div style={{ fontWeight: 600, color: "#267", marginBottom: 10, fontSize: "1.08rem" }}>People</div>
+            <div>
+              {employees.length === 0 && (
+                <span style={{ color: "#777" }}>No data</span>
+              )}
+              <ul style={{ paddingLeft: 0, margin: 0 }}>
+                {employees.map(emp => {
+                  const present = attendance[emp.id]?.status === "Present";
+                  return (
+                    <li
+                      key={emp.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: 9,
+                        fontWeight: 500,
+                        color: present ? "#20af6e" : "#cb9620",
+                        fontSize: "1.025rem"
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={present}
+                        readOnly
+                        disabled={standupCompleted}
+                        style={{
+                          marginRight: 12,
+                          accentColor: present ? "#11b26b" : "#beae6c",
+                          width: "18px",
+                          height: "18px",
+                          cursor: "default"
+                        }}
+                      />
+                      <span>{emp.name}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            {standupCompleted && (
+              <div className="banner" style={{ background: "#e5ffe5", color: "#159f46", marginTop: 16 }}>
+                Standup completed!
+              </div>
+            )}
           </div>
         </div>
       </div>
