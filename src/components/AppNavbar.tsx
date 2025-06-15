@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { path: "/", label: "Home" },
-  { path: "/employees", label: "Employees" },
+  // Removed "Employees" link
   { path: "/standups", label: "Standups" },
   { path: "/attendance", label: "Attendance" },
 ];
