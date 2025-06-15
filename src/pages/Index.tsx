@@ -53,8 +53,7 @@ export default function Index() {
     if (admin) {
       navigate("/admin");
     }
-    // For team members: don't navigate to "/standups" automatically!
-    // They will see streak/motivation here at "/"
+    // Do NOT redirect team members before profile/session is done loading
   }, [admin, navigate]);
 
   // Fetch and calculate attendance streak for logged-in users (not admin)
@@ -174,6 +173,16 @@ export default function Index() {
   };
 
   // When logged in (user+profile) or admin, show streak banner
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center text-lg font-semibold text-muted-foreground">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 flex items-center justify-center">
