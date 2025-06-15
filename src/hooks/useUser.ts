@@ -19,7 +19,8 @@ export function useUser() {
 
   // Set up auth change listener, then fetch session & profile
   useEffect(() => {
-    const { subscription } = supabase.auth.onAuthStateChange((event, session) => {
+    // Fix: Correct destructuring Supabase's auth subscription
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setProfile(null); // Profile will refresh
@@ -30,6 +31,7 @@ export function useUser() {
         setLoading(false);
       }
     });
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
@@ -40,6 +42,7 @@ export function useUser() {
         setLoading(false);
       }
     });
+
     return () => { subscription.unsubscribe(); };
     // eslint-disable-next-line
   }, []);
