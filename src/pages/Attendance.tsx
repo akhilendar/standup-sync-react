@@ -191,7 +191,6 @@ export default function Attendance() {
                   <thead>
                     <tr>
                       <th>Name</th>
-                      <th>Email</th>
                       <th>Status</th>
                       {editing && <th>Edit</th>}
                     </tr>
@@ -203,11 +202,10 @@ export default function Attendance() {
                         className={
                           (editing
                             ? (editedAtt[emp.id] === "Present" ? "table-row-present" : editedAtt[emp.id] === "Missed" ? "table-row-missed" : "table-row-absent")
-                            : (attendance[emp.id]?.status === "Present" ? "table-row-present" : attendance[emp.id]?.status === "Missed" ? "table-row-missed" : "table-row-absent"))
+                            : (attendance[emp.id]?.status === "Present" ? "table-row-present" : attendance[emp.id]?.status === "Missed" ? "table-row-missed" : attendance[emp.id]?.status === "Absent" ? "table-row-absent" : "table-row-absent"))
                         }
                       >
                         <td>{emp.name}</td>
-                        <td>{emp.email}</td>
                         <td>
                           {editing ? (
                             <select
@@ -231,7 +229,9 @@ export default function Attendance() {
                               <option value="Not Available">Not Available</option>
                             </select>
                           ) : (
-                            attendance[emp.id]?.status || <span style={{ color: "#be8808" }}>Missed</span>
+                            attendance[emp.id]?.status
+                              ? attendance[emp.id]?.status
+                              : <span style={{ color: "#be8808" }}>Missed</span>
                           )}
                         </td>
                         {editing && (
