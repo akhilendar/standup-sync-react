@@ -1,36 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useUser } from "@/hooks/useUser";
 import { useNavigate } from "react-router-dom";
-import { FcGoogle } from "react-icons/fc";
 import { useAdminAuth } from "@/context/AdminAuthContext";
+import HomeStreakBanner from "@/components/HomeStreakBanner";
+import AuthModeChooser from "@/components/AuthModeChooser";
+import TeamMemberAuthCard from "@/components/TeamMemberAuthCard";
+import AdminAuthCard from "@/components/AdminAuthCard";
+import { useAttendanceStreak } from "@/hooks/useAttendanceStreak";
+import { supabase } from "@/integrations/supabase/client";
 
 enum EntryMode {
   Choose,
   TeamMember,
   Admin,
 }
-
 enum TeamMemberAuthMode {
   Login = "Login",
   Signup = "Sign Up",
 }
 
-import HomeStreakBanner from "@/components/HomeStreakBanner";
-import AuthModeChooser from "@/components/AuthModeChooser";
-import TeamMemberAuthCard from "@/components/TeamMemberAuthCard";
-import AdminAuthCard from "@/components/AdminAuthCard";
-
 export default function Index() {
-  // Admin authentication state (fix for missing variables)
+  // Admin authentication state
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState<string | null>(null);
 
-  // Move useAdminAuth hook usage to the top so `admin` is initialized before use
   const { admin, login: adminLogin } = useAdminAuth();
 
   const [entryMode, setEntryMode] = useState<EntryMode>(EntryMode.Choose);
@@ -44,9 +41,8 @@ export default function Index() {
   const { user, profile, loading } = useUser();
   const navigate = useNavigate();
 
-  // --- Attendance streak state ---
-  const [attendanceStreak, setAttendanceStreak] = useState<number | "N/A" | null>(null);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  // New: Use attendance streak hook
+  const { attendanceStreak, attendanceLoading } = useAttendanceStreak();
 
   // --- Routing refactor: only admins are redirected away from "/" (home) page ---
   React.useEffect(() => {
@@ -55,77 +51,6 @@ export default function Index() {
     }
     // Do NOT redirect team members before profile/session is done loading
   }, [admin, navigate]);
-
-  // Fetch and calculate attendance streak for logged-in users (not admin)
-  useEffect(() => {
-    async function fetchStreak() {
-      if (!user || !profile) {
-        setAttendanceStreak(null);
-        return;
-      }
-      setAttendanceLoading(true);
-
-      // Fetch user's attendance records, sorted descending by standup date
-      const { data, error } = await supabase
-        .from("attendance")
-        .select("status, standup_id, standups:supabase_standups_id(scheduled_at)")
-        .eq("employee_id", user.id)
-        .order("standups.scheduled_at", { ascending: false });
-
-      if (error || !Array.isArray(data)) {
-        setAttendanceStreak(null);
-        setAttendanceLoading(false);
-        return;
-      }
-
-      // Transform and filter for present streak
-      // Sort records by scheduled_at descending
-      const sortedAtt = data
-        .map((att: any) => ({
-          status: att.status,
-          scheduled_at: att.standups?.scheduled_at,
-        }))
-        .filter((att: any) => att.scheduled_at)
-        .sort((a: any, b: any) => (a.scheduled_at > b.scheduled_at ? -1 : 1));
-
-      // Calculate the current consecutive present streak (most recent backwards)
-      let streak = 0;
-      for (let i = 0; i < sortedAtt.length; i++) {
-        if (sortedAtt[i].status === "Present") {
-          if (i === 0) {
-            streak = 1;
-          } else {
-            // Check if the previous record is yesterday
-            const prevDate = new Date(sortedAtt[i - 1].scheduled_at);
-            const currDate = new Date(sortedAtt[i].scheduled_at);
-            const diff = Math.round((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (diff === 1) {
-              streak += 1;
-            } else {
-              break; // Not consecutive
-            }
-          }
-        } else {
-          if (i === 0) {
-            // Only break the streak at first missed record
-            break;
-          } else {
-            break;
-          }
-        }
-      }
-      setAttendanceStreak(streak);
-      setAttendanceLoading(false);
-    }
-
-    if (user && profile && profile.role !== "admin") {
-      fetchStreak();
-    } else if (admin) {
-      setAttendanceStreak("N/A");
-    }
-  }, [user, profile, admin]);
-
-  // --- Handlers ---
 
   // After login/signup, just reload to let onAuthStateChange trigger
   const handleTeamMemberSubmit = async (e: React.FormEvent) => {
@@ -137,7 +62,7 @@ export default function Index() {
       if (error) setError(error.message);
       // Don't navigate here; let useUser's effect respond
     } else {
-      const redirectUrl = `${window.location.origin}/`; // Home, not standups
+      const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -172,7 +97,6 @@ export default function Index() {
     }
   };
 
-  // When logged in (user+profile) or admin, show streak banner
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
