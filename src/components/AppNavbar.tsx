@@ -7,6 +7,7 @@ const links = [
   // Removed "Employees" link
   { path: "/standups", label: "Standups" },
   { path: "/attendance", label: "Attendance" },
+  { path: "/admin/login", label: "Admin" }
 ];
 
 export default function AppNavbar() {
