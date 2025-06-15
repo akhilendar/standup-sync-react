@@ -6,6 +6,51 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+// NEW UTILITY FUNCTION FOR SHEET SYNC
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec";
+async function syncAttendanceToSheet({
+  standup,
+  employees,
+  attendance,
+}: {
+  standup: { id: string; scheduled_at: string };
+  employees: { id: string; name: string; email: string }[];
+  attendance: Record<
+    string,
+    {
+      id: string;
+      employee_id: string;
+      status: string | null;
+    }
+  >;
+}) {
+  try {
+    // Prepare records for POST
+    const dataToSend = employees.map((emp) => ({
+      standup_id: standup.id,
+      standup_time: new Date(standup.scheduled_at).toLocaleString(),
+      employee_id: emp.id,
+      employee_name: emp.name,
+      employee_email: emp.email,
+      status: attendance[emp.id]?.status || "Absent",
+    }));
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ records: dataToSend }),
+    });
+    // Optionally, a success message could be shown, but we'll avoid spamming
+  } catch (err) {
+    console.error("Sheet sync error:", err);
+    toast({
+      title: "Google Sheet sync failed",
+      description: err instanceof Error ? err.message : "Unknown error",
+      variant: "destructive",
+    });
+  }
+}
+
 type Employee = {
   id: string;
   name: string;
@@ -29,8 +74,7 @@ const AdminStandupDashboard: React.FC = () => {
   React.useEffect(() => {
     const fetchTodayStandup = async () => {
       const today = new Date();
-      // Find a standup scheduled for 'today'
-      const todayStr = today.toISOString().slice(0, 10); // yyyy-mm-dd
+      const todayStr = today.toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from("standups")
         .select("*")
@@ -45,7 +89,6 @@ const AdminStandupDashboard: React.FC = () => {
     fetchTodayStandup();
   }, []);
 
-  // Fetch employees
   React.useEffect(() => {
     if (!todayStandup) return;
     const fetchEmployees = async () => {
@@ -55,7 +98,6 @@ const AdminStandupDashboard: React.FC = () => {
     fetchEmployees();
   }, [todayStandup]);
 
-  // Fetch attendance entries
   React.useEffect(() => {
     if (!todayStandup || (!start && !finalized)) return;
     const fetchAttendance = async () => {
@@ -74,15 +116,38 @@ const AdminStandupDashboard: React.FC = () => {
     fetchAttendance();
   }, [todayStandup, start, finalized]);
 
-  // Utility: parse standup scheduled_at
   const scheduledDate = todayStandup ? new Date(todayStandup.scheduled_at) : null;
   const now = new Date();
 
-  // Is it time to allow "Start Standup"?
   const canStart =
     todayStandup && scheduledDate
       ? now.getTime() >= scheduledDate.getTime()
       : false;
+
+  // Updated - sync after changes
+  const syncSheet = React.useCallback(() => {
+    if (todayStandup && employees.length > 0) {
+      syncAttendanceToSheet({
+        standup: todayStandup,
+        employees: employees,
+        attendance: attendance,
+      });
+    }
+  }, [todayStandup, employees, attendance]);
+
+  // Save attendance in localStorage after standup is stopped
+  const saveAttendanceLocal = () => {
+    if (todayStandup && employees.length > 0) {
+      const details = {
+        standupTime: todayStandup.scheduled_at,
+        attendance: employees.map((emp) => ({
+          ...emp,
+          status: attendance[emp.id]?.status || "Absent",
+        })),
+      };
+      localStorage.setItem("standup_attendance_details", JSON.stringify(details));
+    }
+  };
 
   const handleStart = async () => {
     if (!todayStandup || employees.length === 0) return;
@@ -110,12 +175,12 @@ const AdminStandupDashboard: React.FC = () => {
     setStart(true);
     toast({ title: "Standup started!" });
     setLoading(false);
+    setTimeout(syncSheet, 500); // allow fetchAttendance to update state
   };
 
   const handleCheckbox = async (employeeId: string) => {
     if (!todayStandup || finalized) return;
     setLoading(true);
-    // Toggle Present/Absent
     const prevStatus = attendance[employeeId]?.status;
     const newStatus = prevStatus === "Present" ? "Absent" : "Present";
     const row = attendance[employeeId];
@@ -131,6 +196,7 @@ const AdminStandupDashboard: React.FC = () => {
           ...old,
           [employeeId]: data,
         }));
+        setTimeout(syncSheet, 400); // sync after update
       }
     }
     setLoading(false);
@@ -139,10 +205,11 @@ const AdminStandupDashboard: React.FC = () => {
   const handleStop = async () => {
     setFinalized(true);
     setStart(false);
+    saveAttendanceLocal();
     toast({ title: "Standup finalized", description: "Attendance is locked for today" });
+    setTimeout(syncSheet, 400); // sync after finalizing
   };
 
-  // UI Logic
   if (!todayStandup) {
     return (
       <Card className="mt-8">
@@ -156,7 +223,6 @@ const AdminStandupDashboard: React.FC = () => {
     );
   }
 
-  // Standup available
   return (
     <Card className="mt-8">
       <CardHeader>
