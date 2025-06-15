@@ -9,6 +9,7 @@ import Standups from "./pages/Standups";
 import Attendance from "./pages/Attendance";
 import AdminLogin from "./pages/AdminLogin";
 import AdminHome from "./pages/AdminHome";
+import AdminEmployees from "./pages/AdminEmployees";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminHome />} />
+            <Route path="/admin/employees" element={<AdminEmployees />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
