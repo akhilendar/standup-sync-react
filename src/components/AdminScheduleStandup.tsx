@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,11 @@ type Standup = {
   created_at: string;
 };
 
-export default function AdminScheduleStandup() {
+type AdminScheduleStandupProps = {
+  onAfterSchedule?: () => void;
+};
+
+export default function AdminScheduleStandup({ onAfterSchedule }: AdminScheduleStandupProps) {
   const [time, setTime] = useState(""); // e.g., '09:30'
   const [standups, setStandups] = useState<Standup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,13 +64,12 @@ export default function AdminScheduleStandup() {
     const today = new Date();
     const [hours, minutes] = time.split(":").map(Number);
     today.setHours(hours, minutes, 0, 0);
-    const scheduled_at = today.toISOString(); // ISO with time
+    const scheduled_at = today.toISOString();
 
-    // Conditionally set created_by: UUID for member, omit for admin
     let insertObj: any = { scheduled_at };
     if (profile?.id) {
       insertObj.created_by = profile.id;
-    } // If admin, do NOT set created_by
+    }
 
     const { data, error } = await supabase.from("standups").insert([insertObj]).select().single();
 
@@ -85,6 +87,7 @@ export default function AdminScheduleStandup() {
       toast({ title: "Standup Scheduled" });
       setTime("");
       await fetchStandups();
+      if (onAfterSchedule) onAfterSchedule(); // <------ call callback to reload parent!
     }
     setLoading(false);
   };

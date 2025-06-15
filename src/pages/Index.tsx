@@ -138,12 +138,15 @@ export default function Index() {
               <div className="mb-7 text-center bg-orange-50 border border-orange-200 text-orange-700 rounded-lg p-5">
                 <div className="font-bold mb-2">Standup is not done for today.</div>
                 <div className="mb-4">Let's schedule one now!</div>
-                <button
-                  className="btn-style py-2 px-6 text-base rounded"
+                {/* Prominent Schedule Standup button */}
+                <Button
+                  size="lg"
+                  className="w-full font-bold"
                   onClick={() => window.location.href = "/standups"}
+                  data-testid="schedule-standup-home-btn"
                 >
-                  Go to Standup Page
-                </button>
+                  Schedule Standup
+                </Button>
               </div>
             ) : null}
             <HomeStreakBanner

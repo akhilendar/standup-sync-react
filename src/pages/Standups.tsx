@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import AppNavbar from "@/components/AppNavbar";
 import AdminScheduleStandup from "@/components/AdminScheduleStandup";
@@ -13,51 +14,57 @@ export default function Standups() {
   const [attendance, setAttendance] = useState<Record<string, Attendance>>({});
   const [standup, setStandup] = useState<Standup | null>(null);
   const [standupCompleted, setStandupCompleted] = useState(false);
-  const [standupStarted, setStandupStarted] = useState(false); // local state for demo
+  const [standupStarted, setStandupStarted] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editedAttendance, setEditedAttendance] = useState<Record<string, boolean>>({}); // id -> present
+  const [editedAttendance, setEditedAttendance] = useState<Record<string, boolean>>({});
+
+  // Fetch data function refactored OUT for reuse
+  const fetchData = async () => {
+    // Fetch employees list
+    const { data: empData } = await supabase.from("employees").select("*");
+    setEmployees(empData || []);
+    // Fetch today's standup
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const { data: standupData } = await supabase
+      .from("standups")
+      .select("*")
+      .gte("scheduled_at", todayStr + "T00:00:00.000Z")
+      .lt("scheduled_at", todayStr + "T23:59:59.999Z")
+      .order("scheduled_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setStandup(standupData || null);
+    if (standupData) {
+      // Fetch attendance for this standup
+      const { data: attData } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("standup_id", standupData.id);
+      const map: Record<string, Attendance> = {};
+      attData?.forEach((a) => {
+        map[a.employee_id] = a;
+      });
+      setAttendance(map);
+      setStandupCompleted(attData && attData.length === empData?.length && attData.length > 0);
+    } else {
+      setAttendance({});
+      setStandupCompleted(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchData() {
-      // Fetch employees list
-      const { data: empData } = await supabase.from("employees").select("*");
-      setEmployees(empData || []);
-      // Fetch today's standup
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const { data: standupData } = await supabase
-        .from("standups")
-        .select("*")
-        .gte("scheduled_at", todayStr + "T00:00:00.000Z")
-        .lt("scheduled_at", todayStr + "T23:59:59.999Z")
-        .order("scheduled_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      setStandup(standupData || null);
-      if (standupData) {
-        // Fetch attendance for this standup
-        const { data: attData } = await supabase
-          .from("attendance")
-          .select("*")
-          .eq("standup_id", standupData.id);
-        const map: Record<string, Attendance> = {};
-        attData?.forEach((a) => {
-          map[a.employee_id] = a;
-        });
-        setAttendance(map);
-        setStandupCompleted(attData && attData.length === empData?.length && attData.length > 0);
-      } else {
-        setAttendance({});
-        setStandupCompleted(false);
-      }
-    }
     fetchData();
   }, []);
+
+  const handleScheduleReload = () => {
+    // Called when "Add" button in AdminScheduleStandup succeeds
+    fetchData();
+  };
 
   // Handlers for attendance editing during standup
   const handleStartStandup = () => {
     setStandupStarted(true);
     setEditing(true);
-    // Set present checkbox based on previous attendance or default to false (i.e., not present)
     setEditedAttendance(
       Object.fromEntries(
         employees.map(emp => [emp.id, attendance[emp.id]?.status === "Present"])
@@ -71,7 +78,6 @@ export default function Standups() {
 
   const handleStopStandup = async () => {
     if (!standup) return;
-    // Save attendance to DB
     for (const emp of employees) {
       const empStatus = editedAttendance[emp.id] ? "Present" : "Missed";
       const found = attendance[emp.id];
@@ -87,16 +93,7 @@ export default function Standups() {
         ]);
       }
     }
-    // After saving, reload attendance data (disable further edits)
-    const { data: attData } = await supabase
-      .from("attendance")
-      .select("*")
-      .eq("standup_id", standup.id);
-    const map: Record<string, Attendance> = {};
-    attData?.forEach((a) => {
-      map[a.employee_id] = a;
-    });
-    setAttendance(map);
+    await fetchData();
     setStandupStarted(false);
     setEditing(false);
     setStandupCompleted(true);
@@ -109,7 +106,7 @@ export default function Standups() {
         <div style={{ width: "100%", maxWidth: 620 }}>
           {/* 1. No standup for today: Show ONLY schedule section */}
           {!standup && (
-            <AdminScheduleStandup />
+            <AdminScheduleStandup onAfterSchedule={handleScheduleReload} />
           )}
 
           {/* 2. Standup scheduled for today */}
