@@ -13,8 +13,8 @@ type Standup = {
   scheduled_at: string; // ISO string with time
   created_at: string;
 };
+
 export default function AdminScheduleStandup() {
-  // For time, use input type="time"
   const [time, setTime] = useState(""); // e.g., '09:30'
   const [standups, setStandups] = useState<Standup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,9 +48,8 @@ export default function AdminScheduleStandup() {
   // Schedule standup for today at selected time
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Accept either Supabase profile (member), or admin session
-    const identifier = profile?.id || admin?.email;
-    if (!identifier) {
+
+    if (!profile && !admin) {
       toast({ title: "Not logged in", variant: "destructive" });
       return;
     }
@@ -59,19 +58,18 @@ export default function AdminScheduleStandup() {
       return;
     }
     setLoading(true);
-    // Compose scheduled_at as yyyy-mm-ddTHH:mm:00.000+00:00 (UTC)
     const today = new Date();
     const [hours, minutes] = time.split(":").map(Number);
     today.setHours(hours, minutes, 0, 0);
     const scheduled_at = today.toISOString(); // ISO with time
 
-    // Insert and debug errors
-    const { data, error } = await supabase.from("standups").insert([
-      {
-        scheduled_at,
-        created_by: identifier  // Store either profile.id (uuid) or admin.email (string)
-      }
-    ]).select().single();
+    // Conditionally set created_by: UUID for member, omit for admin
+    let insertObj: any = { scheduled_at };
+    if (profile?.id) {
+      insertObj.created_by = profile.id;
+    } // If admin, do NOT set created_by
+
+    const { data, error } = await supabase.from("standups").insert([insertObj]).select().single();
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -86,14 +84,11 @@ export default function AdminScheduleStandup() {
     } else {
       toast({ title: "Standup Scheduled" });
       setTime("");
-      // Insert result debug:
-      console.log("Inserted standup:", data);
       await fetchStandups();
     }
     setLoading(false);
   };
 
-  // Helper to set time input to "now"
   const setToNowTime = () => {
     const now = new Date();
     const hour = now.getHours().toString().padStart(2,"0");
