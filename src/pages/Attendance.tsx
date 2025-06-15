@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,10 +11,13 @@ export default function Attendance() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [attendance, setAttendance] = useState<Record<string, Attendance>>({});
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editedAtt, setEditedAtt] = useState<Record<string, string>>({}); // id -> status
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
+      setEditing(false); // always exit edit mode if reloading 
       const { data: empData } = await supabase.from("employees").select("*");
       setEmployees(empData || []);
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -37,13 +39,104 @@ export default function Attendance() {
           map[a.employee_id] = a;
         });
         setAttendance(map);
+        setEditedAtt({});
       } else {
         setAttendance({});
+        setEditedAtt({});
       }
       setLoading(false);
     }
     fetchData();
   }, []);
+
+  // Handler: initiate edit mode
+  const handleEdit = () => {
+    const initial = Object.fromEntries(
+      employees.map(emp => [emp.id, attendance[emp.id]?.status || "Absent"])
+    );
+    setEditedAtt(initial);
+    setEditing(true);
+  };
+
+  // Handler: Change status in edit mode
+  const handleChange = (empId: string, val: string) => {
+    setEditedAtt(prev => ({ ...prev, [empId]: val }));
+  };
+
+  // Save edited attendance to DB (insert or update)
+  const handleSave = async () => {
+    setLoading(true);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    // Find today's standup
+    const { data: standup } = await supabase
+      .from("standups")
+      .select("*")
+      .gte("scheduled_at", todayStr + "T00:00:00.000Z")
+      .lt("scheduled_at", todayStr + "T23:59:59.999Z")
+      .order("scheduled_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!standup) {
+      setLoading(false);
+      return;
+    }
+    // Upsert attendance for each employee: update if present, insert if not
+    const bulk = employees.map(emp => {
+      return {
+        standup_id: standup.id,
+        employee_id: emp.id,
+        status: editedAtt[emp.id] || "Absent"
+      };
+    });
+    // Upsert based on standup_id + employee_id composite uniqueness
+    for (let row of bulk) {
+      const found = attendance[row.employee_id];
+      if (found) {
+        // update
+        await supabase
+          .from("attendance")
+          .update({ status: row.status })
+          .eq("employee_id", row.employee_id)
+          .eq("standup_id", row.standup_id);
+      } else {
+        // insert
+        await supabase
+          .from("attendance")
+          .insert([{ ...row }]);
+      }
+    }
+    // After saving, reload state from DB (also ensures attendance/editedAtt update)
+    const { data: attData } = await supabase
+      .from("attendance")
+      .select("*")
+      .eq("standup_id", standup.id);
+    const map: Record<string, Attendance> = {};
+    attData?.forEach((a) => {
+      map[a.employee_id] = a;
+    });
+    setAttendance(map);
+    setEditedAtt({});
+    setEditing(false);
+
+    // Google Sheets re-sync as before
+    const dataToSend = employees.map((emp) => ({
+      standup_id: standup.id,
+      standup_time: new Date(standup.scheduled_at).toLocaleString(),
+      employee_id: emp.id,
+      employee_name: emp.name,
+      employee_email: emp.email,
+      status: map[emp.id]?.status || "Absent",
+    }));
+    await fetch(
+      "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ records: dataToSend }),
+      }
+    );
+    setLoading(false);
+  };
 
   const handleSyncSheet = async () => {
     setLoading(true);
@@ -81,16 +174,23 @@ export default function Attendance() {
       <AppNavbar />
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="card-style" style={{ maxWidth: 700 }}>
-          <h1 style={{ marginBottom: 20 }}>Attendance</h1>
-          <button className="btn-style" onClick={handleSyncSheet}>
+          <h1 style={{ marginBottom: 18 }}>Attendance</h1>
+          <button className="btn-style" onClick={handleSyncSheet} disabled={loading}>
             Resync to Google Sheet
           </button>
           {loading ? (
             <div className="banner" style={{ background: "#e6eeff", color: "#3366a3", margin: "18px 0" }}>Loading...</div>
           ) : (
             <>
-              <div style={{ marginTop: 18, fontWeight: 600, color: "#27588a", fontSize: "1.05rem" }}>
+              <div style={{ margin: "18px 0 7px 0", fontWeight: 600, color: "#27588a", fontSize: "1.05rem" }}>
                 <span>Today’s Attendance</span>
+                {!editing && (
+                  <button className="btn-style" style={{ float: "right", fontSize: 14, padding: "5px 16px", borderRadius: 12, marginTop: -2 }}
+                    onClick={handleEdit}
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
               <div style={{ overflowX: "auto", width: "100%", marginTop: 10 }}>
                 <table className="table-style">
@@ -99,6 +199,7 @@ export default function Attendance() {
                       <th>Name</th>
                       <th>Email</th>
                       <th>Status</th>
+                      {editing && <th>Edit</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -106,21 +207,65 @@ export default function Attendance() {
                       <tr
                         key={emp.id}
                         className={
-                          attendance[emp.id]?.status === "Present"
-                            ? "table-row-present"
-                            : "table-row-absent"
+                          (editing
+                            ? (editedAtt[emp.id] === "Present" ? "table-row-present" : "table-row-absent")
+                            : (attendance[emp.id]?.status === "Present" ? "table-row-present" : "table-row-absent"))
                         }
                       >
                         <td>{emp.name}</td>
                         <td>{emp.email}</td>
                         <td>
-                          {attendance[emp.id]?.status || <span style={{ color: "#be8808" }}>Absent</span>}
+                          {editing ? (
+                            <select
+                              style={{
+                                padding: "6px 14px",
+                                borderRadius: "7px",
+                                border: "1.6px solid #b7e6d7",
+                                background: "#f5ffee",
+                                fontWeight: 600,
+                                color: "#20af6e",
+                                fontSize: "0.96rem",
+                                outline: "none",
+                              }}
+                              value={editedAtt[emp.id]}
+                              onChange={e => handleChange(emp.id, e.target.value)}
+                              data-testid={`status-select-${emp.id}`}
+                            >
+                              <option value="Present">Present</option>
+                              <option value="Absent">Absent</option>
+                            </select>
+                          ) : (
+                            attendance[emp.id]?.status || <span style={{ color: "#be8808" }}>Absent</span>
+                          )}
                         </td>
+                        {editing && (
+                          <td>
+                            <span role="img" aria-label="editing">✏️</span>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              {editing && (
+                <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end", gap: 9 }}>
+                  <button
+                    className="btn-style"
+                    style={{ fontSize: "1rem", borderRadius: 10, padding: "8px 22px" }}
+                    onClick={handleSave}
+                  >
+                    Add to Database
+                  </button>
+                  <button
+                    className="btn-style"
+                    style={{ background: "#e4e8fc", color: "#1272a5", fontWeight: 700, borderRadius: 10, padding: "8px 19px" }}
+                    onClick={() => { setEditing(false); setEditedAtt({}); }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

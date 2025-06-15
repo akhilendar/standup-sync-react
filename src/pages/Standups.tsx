@@ -1,85 +1,33 @@
+
+// Standups page: Improve content and style, remove admin/next standup info.
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AppNavbar from "@/components/AppNavbar";
-import { useUser } from "@/hooks/useUser";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAdminAuth } from "@/context/AdminAuthContext";
+import "./Attendance.css"; // Leverage the global table/card/banner CSS for visual consistency
 
 export default function Standups() {
-  const { loading, profile } = useUser();
-  const { admin } = useAdminAuth();
-  const navigate = useNavigate();
-  const [nextStandup, setNextStandup] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (!loading && !profile && !admin) {
-      // If not logged in as member or admin, force login
-      navigate("/");
-    }
-  }, [loading, profile, admin, navigate]);
-
-  React.useEffect(() => {
-    async function fetchNextStandup() {
-      const today = new Date().toISOString().slice(0, 10);
-      const { data, error } = await supabase
-        .from("standups")
-        .select("scheduled_at")
-        .gte("scheduled_at", today)
-        .order("scheduled_at", { ascending: true })
-        .limit(1);
-      if (data && data[0]) {
-        setNextStandup(data[0].scheduled_at);
-      } else {
-        setNextStandup(null);
-      }
-    }
-    fetchNextStandup();
-  }, []);
-
-  if (loading || (!profile && !admin)) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <AppNavbar />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-lg text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const displayName = profile?.name || admin?.email || "User";
-  const role = profile?.role || (admin ? "admin" : "");
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(120deg, #e6eafc 0%, #c8eafc 50%, #f1f4f9 100%)" }}>
       <AppNavbar />
-      <div className="max-w-xl mx-auto my-10 flex-1 flex items-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Standups</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <p className="text-muted-foreground">
-                Welcome, {displayName}! Your role: {role}.
-              </p>
-              <p className="text-muted-foreground mt-2">
-                Standup scheduling and logs will appear here soon.
-              </p>
-              <div className="mt-4">
-                {nextStandup ? (
-                  <div>
-                    <span className="font-semibold">Next Standup:</span>{" "}
-                    {nextStandup}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">No upcoming standups scheduled.</span>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="card-style" style={{ maxWidth: 520 }}>
+          <h1 style={{ marginBottom: 13 }}>Team Standups</h1>
+          <div className="banner" style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}>
+            Welcome to the team standup page&nbsp;🎤
+          </div>
+          <div style={{ marginTop: 22, color: "#155a84", lineHeight: 1.7, fontWeight: 500, fontSize: "1.07rem"}}>
+            <p>
+              This page lets you track your daily standup meetings and team attendance.
+              Standups help everyone stay accountable and aligned, improving overall collaboration. 
+              If you're an admin, you can schedule standups and monitor team participation. 
+              Employees can review their attendance history and stay on top of important updates.
+            </p>
+            <ul style={{ marginTop: 17, marginLeft: 20, color: "#1d7b64", fontWeight: 600 }}>
+              <li>⏰ View all scheduled standups in one place</li>
+              <li>✅ See your attendance status for recent standups</li>
+              <li>📅 Keep your team on track and connected</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
