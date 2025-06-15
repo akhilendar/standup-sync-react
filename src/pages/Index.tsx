@@ -22,6 +22,9 @@ enum TeamMemberAuthMode {
 }
 
 export default function Index() {
+  // Move useAdminAuth hook usage to the top so `admin` is initialized before use
+  const { admin, login: adminLogin } = useAdminAuth();
+
   const [entryMode, setEntryMode] = useState<EntryMode>(EntryMode.Choose);
   // TEAM MEMBER AUTH
   const [tmMode, setTmMode] = useState<TeamMemberAuthMode>(TeamMemberAuthMode.Login);
@@ -40,7 +43,6 @@ export default function Index() {
   }, [user, profile, admin, navigate]);
 
   // ADMIN AUTH
-  const { admin, login: adminLogin } = useAdminAuth();
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState<string | null>(null);
