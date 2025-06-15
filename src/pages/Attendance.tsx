@@ -132,6 +132,7 @@ export default function Attendance() {
     setLoading(false);
   };
 
+  // Modified handleSyncSheet:
   const handleSyncSheet = async () => {
     setLoading(true);
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -143,14 +144,28 @@ export default function Attendance() {
       .order("scheduled_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (!standup) return setLoading(false);
+    if (!standup) {
+      setLoading(false);
+      return;
+    }
+    // Always fetch fresh attendance data for today
+    const { data: attData } = await supabase
+      .from("attendance")
+      .select("*")
+      .eq("standup_id", standup.id);
+    const newAttendance: Record<string, Attendance> = {};
+    attData?.forEach((a) => {
+      newAttendance[a.employee_id] = a;
+    });
+    setAttendance(newAttendance);
+
     const dataToSend = employees.map((emp) => ({
       standup_id: standup.id,
       standup_time: new Date(standup.scheduled_at).toLocaleString(),
       employee_id: emp.id,
       employee_name: emp.name,
       employee_email: emp.email,
-      status: attendance[emp.id]?.status || "Missed",
+      status: newAttendance[emp.id]?.status || "Missed",
     }));
     await fetch(
       "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
@@ -162,6 +177,13 @@ export default function Attendance() {
     );
     setLoading(false);
   };
+
+  // Compute counts
+  const totalEmployees = employees.length;
+  const presentCount = employees.filter(
+    (emp) =>
+      (editing ? editedAtt[emp.id] : attendance[emp.id]?.status) === "Present"
+  ).length;
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -178,6 +200,10 @@ export default function Attendance() {
             <>
               <div style={{ margin: "18px 0 7px 0", fontWeight: 600, color: "#27588a", fontSize: "1.05rem" }}>
                 <span>Today’s Attendance</span>
+                {/* Attendance count */}
+                <span style={{ marginLeft: 20, color: "#188d4c", fontWeight: 800 }}>
+                  Present: {presentCount} / {totalEmployees}
+                </span>
                 {!editing && (
                   <button className="btn-style" style={{ float: "right", fontSize: 14, padding: "5px 16px", borderRadius: 12, marginTop: -2 }}
                     onClick={handleEdit}
