@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import TeamMemberAuthCard from "@/components/TeamMemberAuthCard";
 import AdminAuthCard from "@/components/AdminAuthCard";
 import { useAttendanceStreak } from "@/hooks/useAttendanceStreak";
 import { supabase } from "@/integrations/supabase/client";
+import AppNavbar from "@/components/AppNavbar";
 
 enum EntryMode {
   Choose,
@@ -107,17 +107,29 @@ export default function Index() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-sm">
-          {(user && profile) || admin ? (
+  // CASE: Logged in user OR admin
+  if ((user && profile) || admin) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <AppNavbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-sm">
             <HomeStreakBanner
               attendanceStreak={attendanceStreak}
               attendanceLoading={attendanceLoading}
               isAdmin={!!admin}
             />
-          ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: not logged in
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-full max-w-sm">
           {entryMode === EntryMode.Choose && (
             <AuthModeChooser
               onChoose={(choice) =>
