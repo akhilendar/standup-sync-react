@@ -114,7 +114,7 @@ export default function Attendance() {
     setAttendance(map);
     setEditedAtt({});
     setEditing(false);
-    // Google Sheets sync as before
+    // Google Sheets sync via CORS proxy
     const dataToSend = employees.map((emp) => ({
       standup_id: standup.id,
       standup_time: new Date(standup.scheduled_at).toLocaleString(),
@@ -124,7 +124,10 @@ export default function Attendance() {
       status: map[emp.id]?.status || "Missed",
     }));
     await fetch(
-      "https://script.google.com/macros/s/AKfycbxVzcsOBMPMic58wrjZeTMDgVfqfyHGKgxGLbi__GwLowlwYe09NuHqZ5uNMoPPAT4zvQ/exec",
+      "https://corsproxy.io/?" +
+        encodeURIComponent(
+          "https://script.google.com/macros/s/AKfycbxVzcsOBMPMic58wrjZeTMDgVfqfyHGKgxGLbi__GwLowlwYe09NuHqZ5uNMoPPAT4zvQ/exec"
+        ),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,7 +178,10 @@ export default function Attendance() {
     }));
     try {
       const res = await fetch(
-        "https://script.google.com/macros/s/AKfycbxVzcsOBMPMic58wrjZeTMDgVfqfyHGKgxGLbi__GwLowlwYe09NuHqZ5uNMoPPAT4zvQ/exec",
+        "https://corsproxy.io/?" +
+          encodeURIComponent(
+            "https://script.google.com/macros/s/AKfycbxVzcsOBMPMic58wrjZeTMDgVfqfyHGKgxGLbi__GwLowlwYe09NuHqZ5uNMoPPAT4zvQ/exec"
+          ),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -324,4 +330,3 @@ export default function Attendance() {
   );
 }
 
-// Note: src/pages/Attendance.tsx is now quite long (over 276 lines). It is recommended to refactor this page into smaller components for maintainability.
