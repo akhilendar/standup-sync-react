@@ -4,6 +4,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "@/components/AppNavbar";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import "./AdminHome.css"; // Standalone admin dashboard tweaks
 // Removed Tailwind imports -- using global CSS now.
 
@@ -46,6 +47,11 @@ const AdminHome = () => {
     fetchSummary();
   }, []);
 
+  // Handler for redirecting to the standups page
+  const handleScheduleStandup = () => {
+    navigate("/standups");
+  };
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: 0, margin: 0 }}>
       <AppNavbar />
@@ -77,8 +83,19 @@ const AdminHome = () => {
                 </div>
               </div>
             ) : (
-              <div className="banner" style={{ color: "#b85c42", background: "linear-gradient(90deg,#ffece6 0%, #f4e6e6 100%)", marginTop: 20, fontWeight: 600, fontSize: "1.07rem" }}>
-                No standup scheduled today.
+              <div>
+                <div className="banner" style={{ color: "#b85c42", background: "linear-gradient(90deg,#ffece6 0%, #f4e6e6 100%)", marginTop: 20, fontWeight: 600, fontSize: "1.07rem" }}>
+                  No standup scheduled today.
+                </div>
+                {/* Show Schedule Standup button below message */}
+                <Button
+                  size="lg"
+                  className="w-full mt-6 font-bold"
+                  onClick={handleScheduleStandup}
+                  data-testid="admin-schedule-standup-home-btn"
+                >
+                  Schedule Standup
+                </Button>
               </div>
             )}
           </div>
@@ -89,3 +106,4 @@ const AdminHome = () => {
 };
 
 export default AdminHome;
+
