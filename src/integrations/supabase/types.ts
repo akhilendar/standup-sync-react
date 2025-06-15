@@ -9,7 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      attendance: {
+        Row: {
+          employee_id: string | null
+          id: string
+          marked_at: string | null
+          marked_by: string | null
+          standup_id: string | null
+          status: string | null
+        }
+        Insert: {
+          employee_id?: string | null
+          id?: string
+          marked_at?: string | null
+          marked_by?: string | null
+          standup_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          employee_id?: string | null
+          id?: string
+          marked_at?: string | null
+          marked_by?: string | null
+          standup_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_standup_id_fkey"
+            columns: ["standup_id"]
+            isOneToOne: false
+            referencedRelation: "standups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          name: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      standups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          scheduled_at: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          scheduled_at: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          scheduled_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
