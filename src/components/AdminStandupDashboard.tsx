@@ -25,14 +25,19 @@ const AdminStandupDashboard: React.FC = () => {
   const [finalized, setFinalized] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
-  // Get today's standup
+  // Get today's standup with datetime (scheduled_at includes time!)
   React.useEffect(() => {
     const fetchTodayStandup = async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date();
+      // Find a standup scheduled for 'today'
+      const todayStr = today.toISOString().slice(0, 10); // yyyy-mm-dd
       const { data, error } = await supabase
         .from("standups")
         .select("*")
-        .eq("scheduled_at", today)
+        .gte("scheduled_at", todayStr + "T00:00:00.000Z")
+        .lt("scheduled_at", todayStr + "T23:59:59.999Z")
+        .order("scheduled_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (data) setTodayStandup(data);
       else setTodayStandup(null);
@@ -44,17 +49,17 @@ const AdminStandupDashboard: React.FC = () => {
   React.useEffect(() => {
     if (!todayStandup) return;
     const fetchEmployees = async () => {
-      const { data, error } = await supabase.from("employees").select("*");
+      const { data } = await supabase.from("employees").select("*");
       if (data) setEmployees(data);
     };
     fetchEmployees();
   }, [todayStandup]);
 
-  // Fetch attendance entries if started/stopped
+  // Fetch attendance entries
   React.useEffect(() => {
     if (!todayStandup || (!start && !finalized)) return;
     const fetchAttendance = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("attendance")
         .select("*")
         .eq("standup_id", todayStandup.id);
@@ -68,6 +73,16 @@ const AdminStandupDashboard: React.FC = () => {
     };
     fetchAttendance();
   }, [todayStandup, start, finalized]);
+
+  // Utility: parse standup scheduled_at
+  const scheduledDate = todayStandup ? new Date(todayStandup.scheduled_at) : null;
+  const now = new Date();
+
+  // Is it time to allow "Start Standup"?
+  const canStart =
+    todayStandup && scheduledDate
+      ? now.getTime() >= scheduledDate.getTime()
+      : false;
 
   const handleStart = async () => {
     if (!todayStandup || employees.length === 0) return;
@@ -146,13 +161,13 @@ const AdminStandupDashboard: React.FC = () => {
     <Card className="mt-8">
       <CardHeader>
         <CardTitle>
-          Standup for {todayStandup.scheduled_at}
+          Standup for {scheduledDate?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} on {scheduledDate?.toLocaleDateString()}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {!start && !finalized ? (
-          <Button onClick={handleStart} disabled={loading || employees.length === 0}>
-            Start Standup
+          <Button onClick={handleStart} disabled={loading || employees.length === 0 || !canStart}>
+            {canStart ? "Start Standup" : `Start available at ${scheduledDate?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
           </Button>
         ) : (
           <>
