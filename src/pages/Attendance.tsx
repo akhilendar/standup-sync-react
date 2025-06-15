@@ -123,12 +123,10 @@ export default function Attendance() {
       status: map[emp.id]?.status || "Missed",
     }));
     await fetch(
-      "https://corsproxy.io/?" +
-        encodeURIComponent(
-          "https://script.google.com/macros/s/AKfycbwokjgqPpPTl6kwhU490ohZqLg8t7awNVNhX53dZfTZ0gBRys2TITEtVO5jF7Is_Ns2zA/exec"
-        ),
+      "https://script.google.com/macros/s/AKfycbwokjgqPpPTl6kwhU490ohZqLg8t7awNVNhX53dZfTZ0gBRys2TITEtVO5jF7Is_Ns2zA/exec",
       {
         method: "POST",
+        mode: "cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ records: dataToSend }),
       }
@@ -177,12 +175,10 @@ export default function Attendance() {
     }));
     try {
       const res = await fetch(
-        "https://corsproxy.io/?" +
-          encodeURIComponent(
-            "https://script.google.com/macros/s/AKfycbwokjgqPpPTl6kwhU490ohZqLg8t7awNVNhX53dZfTZ0gBRys2TITEtVO5jF7Is_Ns2zA/exec"
-          ),
+        "https://script.google.com/macros/s/AKfycbwokjgqPpPTl6kwhU490ohZqLg8t7awNVNhX53dZfTZ0gBRys2TITEtVO5jF7Is_Ns2zA/exec",
         {
           method: "POST",
+          mode: "cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ records: dataToSend }),
         }
