@@ -1,7 +1,9 @@
+
 import React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AppNavbar from "@/components/AppNavbar";
+import { toast } from "@/components/ui/use-toast";
 import "./Attendance.css";
 
 type Employee = { id: string; name: string; email: string };
