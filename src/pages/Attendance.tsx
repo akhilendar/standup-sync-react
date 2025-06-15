@@ -145,6 +145,10 @@ export default function Attendance() {
       .limit(1)
       .maybeSingle();
     if (!standup) {
+      toast({
+        title: "No standup found for today.",
+        variant: "destructive",
+      });
       setLoading(false);
       return;
     }
@@ -167,14 +171,36 @@ export default function Attendance() {
       employee_email: emp.email,
       status: newAttendance[emp.id]?.status || "Missed",
     }));
-    await fetch(
-      "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: dataToSend }),
+    try {
+      const res = await fetch(
+        "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records: dataToSend }),
+        }
+      );
+      const resJson = await res.json();
+      if (resJson.status === "success") {
+        toast({
+          title: "Google Sheet sync successful!",
+          description: resJson.message || "",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Google Sheet sync failed",
+          description: resJson.message || "An error occurred.",
+          variant: "destructive",
+        });
       }
-    );
+    } catch (error: any) {
+      toast({
+        title: "Google Sheet sync failed",
+        description: error?.message || "An error occurred.",
+        variant: "destructive",
+      });
+    }
     setLoading(false);
   };
 
