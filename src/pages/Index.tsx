@@ -1,6 +1,6 @@
 // New home page that offers option for Admin or Team Member login/signup
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,10 @@ export default function Index() {
   const { user, profile, loading } = useUser();
   const navigate = useNavigate();
 
+  // --- Attendance streak state ---
+  const [attendanceStreak, setAttendanceStreak] = useState<number | "N/A" | null>(null);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+
   React.useEffect(() => {
     if ((user && profile) || admin) {
       navigate("/standups");
@@ -50,6 +54,75 @@ export default function Index() {
   React.useEffect(() => {
     if (admin) navigate("/admin");
   }, [admin, navigate]);
+
+  // Fetch and calculate attendance streak for logged-in users (not admin)
+  useEffect(() => {
+    async function fetchStreak() {
+      if (!user || !profile) {
+        setAttendanceStreak(null);
+        return;
+      }
+      setAttendanceLoading(true);
+
+      // Fetch user's attendance records, sorted descending by standup date
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("status, standup_id, standups:supabase_standups_id(scheduled_at)")
+        .eq("employee_id", user.id)
+        .order("standups.scheduled_at", { ascending: false });
+
+      if (error || !Array.isArray(data)) {
+        setAttendanceStreak(null);
+        setAttendanceLoading(false);
+        return;
+      }
+
+      // Transform and filter for present streak
+      // Sort records by scheduled_at descending
+      const sortedAtt = data
+        .map((att: any) => ({
+          status: att.status,
+          scheduled_at: att.standups?.scheduled_at,
+        }))
+        .filter((att: any) => att.scheduled_at)
+        .sort((a: any, b: any) => (a.scheduled_at > b.scheduled_at ? -1 : 1));
+
+      // Calculate the current consecutive present streak (most recent backwards)
+      let streak = 0;
+      for (let i = 0; i < sortedAtt.length; i++) {
+        if (sortedAtt[i].status === "Present") {
+          if (i === 0) {
+            streak = 1;
+          } else {
+            // Check if the previous record is yesterday
+            const prevDate = new Date(sortedAtt[i - 1].scheduled_at);
+            const currDate = new Date(sortedAtt[i].scheduled_at);
+            const diff = Math.round((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (diff === 1) {
+              streak += 1;
+            } else {
+              break; // Not consecutive
+            }
+          }
+        } else {
+          if (i === 0) {
+            // Only break the streak at first missed record
+            break;
+          } else {
+            break;
+          }
+        }
+      }
+      setAttendanceStreak(streak);
+      setAttendanceLoading(false);
+    }
+
+    if (user && profile && profile.role !== "admin") {
+      fetchStreak();
+    } else if (admin) {
+      setAttendanceStreak("N/A");
+    }
+  }, [user, profile, admin]);
 
   // Handlers
   const handleTeamMemberSubmit = async (e: React.FormEvent) => {
@@ -102,6 +175,27 @@ export default function Index() {
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-sm">
+          {/* Show attendance streak at the top for logged in users */}
+          {(user && profile) || admin ? (
+            <div className="mb-6">
+              <div className="text-lg font-semibold text-center flex flex-col gap-1">
+                <span>Your Attendance Streak:</span>
+                <span className="text-3xl font-bold text-primary">
+                  {attendanceLoading
+                    ? "Loading..."
+                    : attendanceStreak !== null
+                    ? attendanceStreak
+                    : "--"}
+                  {attendanceStreak !== "N/A" && attendanceStreak !== null && typeof attendanceStreak === "number" ? (
+                    <span className="text-base font-medium ml-1">day{attendanceStreak === 1 ? "" : "s"}</span>
+                  ) : (
+                    ""
+                  )}
+                </span>
+              </div>
+            </div>
+          ) : null}
+
           {entryMode === EntryMode.Choose && (
             <div className="space-y-6 text-center">
               <h1 className="text-3xl font-bold mb-4">Welcome to Your Attendance Tracker</h1>
