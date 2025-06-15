@@ -2,10 +2,9 @@
 import React from "react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AppNavbar from "@/components/AppNavbar";
 import { supabase } from "@/integrations/supabase/client";
+import "./AdminHome.css"; // New CSS for this page
 
 const AdminHome = () => {
   const { admin, logout } = useAdminAuth();
@@ -22,7 +21,6 @@ const AdminHome = () => {
 
   React.useEffect(() => {
     async function fetchSummary() {
-      // 1. Find today's standup
       const todayStr = new Date().toISOString().slice(0, 10);
       const { data: standup } = await supabase
         .from("standups")
@@ -34,7 +32,6 @@ const AdminHome = () => {
         .maybeSingle();
       let standupTime = null, present = 0, total = 0;
       if (standup) {
-        // 2. Count attendance
         const { data: attendance } = await supabase
           .from("attendance")
           .select("*")
@@ -49,37 +46,39 @@ const AdminHome = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background p-4">
+    <div className="admin-home-bg">
       <AppNavbar />
-      <Card className="w-full max-w-2xl mt-10">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Admin Dashboard</CardTitle>
-            <Button variant="outline" size="sm" onClick={logout}>Logout</Button>
+      <div className="admin-home-content">
+        <div className="admin-home-card">
+          <div className="admin-home-header">
+            <h1 className="admin-home-title">Admin Dashboard</h1>
+            <button className="admin-home-logout-btn" onClick={logout}>Logout</button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <span className="font-semibold">Welcome, {admin?.email}!</span>
+          <div className="admin-home-card-content">
+            <div className="admin-home-welcome">
+              Welcome, <span>{admin?.email}!</span>
+            </div>
+            {summary.standupTime ? (
+              <div className="admin-home-summary">
+                <div>
+                  <span>Today's Standup:</span>
+                  <span className="admin-home-standup-time">{summary.standupTime}</span>
+                </div>
+                <div>
+                  <span>Attendance:</span>
+                  <span className="admin-home-attendance">
+                    {summary.present} / {summary.total}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="admin-home-no-standup">
+                No standup scheduled today.
+              </div>
+            )}
           </div>
-          {summary.standupTime ? (
-            <div className="space-y-2">
-              <div>
-                <span className="font-semibold">Today's Standup:</span>&nbsp;
-                {summary.standupTime}
-              </div>
-              <div>
-                <span className="font-semibold">Attendance:</span>&nbsp;
-                {summary.present} / {summary.total}
-              </div>
-            </div>
-          ) : (
-            <div className="text-muted-foreground">
-              No standup scheduled today.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
