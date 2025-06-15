@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
@@ -43,6 +43,26 @@ export default function Index() {
 
   // New: Use attendance streak hook
   const { attendanceStreak, attendanceLoading } = useAttendanceStreak();
+
+  // New: Check if standup is scheduled for today
+  const [standupScheduled, setStandupScheduled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check if standup is scheduled for today
+    async function checkTodayStandup() {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const { data: standup } = await supabase
+        .from("standups")
+        .select("*")
+        .gte("scheduled_at", todayStr + "T00:00:00.000Z")
+        .lt("scheduled_at", todayStr + "T23:59:59.999Z")
+        .order("scheduled_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setStandupScheduled(!!standup);
+    }
+    checkTodayStandup();
+  }, []);
 
   // --- Routing refactor: only admins are redirected away from "/" (home) page ---
   React.useEffect(() => {
@@ -114,6 +134,18 @@ export default function Index() {
         <AppNavbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-sm">
+            {!standupScheduled && standupScheduled !== null ? (
+              <div className="mb-7 text-center bg-orange-50 border border-orange-200 text-orange-700 rounded-lg p-5">
+                <div className="font-bold mb-2">Standup is not done for today.</div>
+                <div className="mb-4">Let's schedule one now!</div>
+                <button
+                  className="btn-style py-2 px-6 text-base rounded"
+                  onClick={() => window.location.href = "/standups"}
+                >
+                  Go to Standup Page
+                </button>
+              </div>
+            ) : null}
             <HomeStreakBanner
               attendanceStreak={attendanceStreak}
               attendanceLoading={attendanceLoading}

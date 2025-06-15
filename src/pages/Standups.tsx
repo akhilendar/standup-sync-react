@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import AppNavbar from "@/components/AppNavbar";
 import AdminScheduleStandup from "@/components/AdminScheduleStandup";
@@ -6,11 +7,16 @@ import "./Attendance.css";
 
 type Employee = { id: string; name: string; email: string };
 type Attendance = { employee_id: string; status: string | null };
+type Standup = { id: string; scheduled_at: string };
 
 export default function Standups() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [attendance, setAttendance] = useState<Record<string, Attendance>>({});
+  const [standup, setStandup] = useState<Standup | null>(null);
   const [standupCompleted, setStandupCompleted] = useState(false);
+  const [standupStarted, setStandupStarted] = useState(false); // local state for demo
+  const [editing, setEditing] = useState(false);
+  const [editedAttendance, setEditedAttendance] = useState<Record<string, string>>({}); // id -> status
 
   useEffect(() => {
     async function fetchData() {
@@ -19,7 +25,7 @@ export default function Standups() {
       setEmployees(empData || []);
       // Fetch today's standup
       const todayStr = new Date().toISOString().slice(0, 10);
-      const { data: standup } = await supabase
+      const { data: standupData } = await supabase
         .from("standups")
         .select("*")
         .gte("scheduled_at", todayStr + "T00:00:00.000Z")
@@ -27,18 +33,19 @@ export default function Standups() {
         .order("scheduled_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (standup) {
+      setStandup(standupData || null);
+      if (standupData) {
         // Fetch attendance for this standup
         const { data: attData } = await supabase
           .from("attendance")
           .select("*")
-          .eq("standup_id", standup.id);
+          .eq("standup_id", standupData.id);
         const map: Record<string, Attendance> = {};
         attData?.forEach((a) => {
           map[a.employee_id] = a;
         });
         setAttendance(map);
-        // Let's say standup is complete if all employees have any attendance marked.
+        // Standup completed if everyone has "Present" or "Missed" or non-empty status
         setStandupCompleted(attData && attData.length === empData?.length && attData.length > 0);
       } else {
         setAttendance({});
@@ -48,68 +55,180 @@ export default function Standups() {
     fetchData();
   }, []);
 
+  // Handlers for attendance editing during standup
+  const handleStartStandup = () => {
+    setStandupStarted(true);
+    setEditing(true);
+    setEditedAttendance(
+      Object.fromEntries(employees.map(emp => [emp.id, attendance[emp.id]?.status || "Missed"]))
+    );
+  };
+
+  const handleAttendanceChange = (empId: string, value: string) => {
+    setEditedAttendance(prev => ({ ...prev, [empId]: value }));
+  };
+
+  const handleStopStandup = async () => {
+    if (!standup) return;
+    // Save attendance to DB
+    for (const emp of employees) {
+      const empStatus = editedAttendance[emp.id] || "Missed";
+      const found = attendance[emp.id];
+      if (found) {
+        await supabase
+          .from("attendance")
+          .update({ status: empStatus })
+          .eq("employee_id", emp.id)
+          .eq("standup_id", standup.id);
+      } else {
+        await supabase.from("attendance").insert([
+          { standup_id: standup.id, employee_id: emp.id, status: empStatus },
+        ]);
+      }
+    }
+    // After saving, reload attendance data (disable further edits)
+    const { data: attData } = await supabase
+      .from("attendance")
+      .select("*")
+      .eq("standup_id", standup.id);
+    const map: Record<string, Attendance> = {};
+    attData?.forEach((a) => {
+      map[a.employee_id] = a;
+    });
+    setAttendance(map);
+    setStandupStarted(false);
+    setEditing(false);
+    setStandupCompleted(true);
+  };
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(120deg, #e6eafc 0%, #c8eafc 50%, #f1f4f9 100%)" }}>
       <AppNavbar />
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ width: "100%", maxWidth: 620 }}>
-          {/* Standup scheduling option (add schedule form here) */}
-          <AdminScheduleStandup />
-          <div className="card-style" style={{ maxWidth: 520, margin: "30px auto 0" }}>
-            <h1 style={{ marginBottom: 13 }}>Team Standups</h1>
-            <div className="banner" style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}>
-              Stay on track with team standups! <span role="img" aria-label="microphone">🎤</span>
-            </div>
-            <div style={{ marginTop: 18, color: "#238", fontWeight: 400, fontSize: "1.04rem" }}>
-              See who joined today's standup and stay connected. Checkmarks show who attended.
-            </div>
-            <div style={{ marginTop: 30 }}>
-              <div style={{ fontWeight: 600, color: "#267", marginBottom: 10, fontSize: "1.08rem" }}>People</div>
-              <div>
-                {employees.length === 0 && (
-                  <span style={{ color: "#777" }}>No data</span>
-                )}
-                <ul style={{ paddingLeft: 0, margin: 0 }}>
-                  {employees.map(emp => {
-                    const present = attendance[emp.id]?.status === "Present";
-                    return (
-                      <li
-                        key={emp.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          marginBottom: 9,
-                          fontWeight: 500,
-                          color: present ? "#20af6e" : "#cb9620",
-                          fontSize: "1.025rem"
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={present}
-                          readOnly
-                          disabled={standupCompleted}
-                          style={{
-                            marginRight: 12,
-                            accentColor: present ? "#11b26b" : "#beae6c",
-                            width: "18px",
-                            height: "18px",
-                            cursor: "default"
-                          }}
-                        />
-                        <span>{emp.name}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
+          {/* 1. No standup for today: Show ONLY schedule section */}
+          {!standup && (
+            <AdminScheduleStandup />
+          )}
+
+          {/* 2. Standup scheduled for today */}
+          {standup && !standupStarted && !standupCompleted && (
+            <div className="card-style" style={{ maxWidth: 520, margin: "40px auto 0", textAlign: "center", padding: 32 }}>
+              <h2 style={{ marginBottom: 18 }}>Today's Standup</h2>
+              <div className="banner" style={{ background: "#e6f7ff", color: "#096", margin: "0 0 20px 0" }}>
+                Standup scheduled for today.
               </div>
-              {standupCompleted && (
+              <button
+                className="btn-style py-2 px-7 text-lg rounded"
+                onClick={handleStartStandup}
+              >
+                Start Standup
+              </button>
+            </div>
+          )}
+
+          {/* 3. Standup started: Show attendance editing */}
+          {standup && standupStarted && !standupCompleted && (
+            <div className="card-style" style={{ maxWidth: 520, margin: "40px auto 0" }}>
+              <h2 style={{ marginBottom: 16 }}>Mark Attendance</h2>
+              <div style={{ marginTop: 12, fontWeight: 600, color: "#267", marginBottom: 12 }}>People</div>
+              <ul style={{ paddingLeft: 0, margin: 0 }}>
+                {employees.map(emp => (
+                  <li
+                    key={emp.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 12,
+                      fontWeight: 500,
+                      color: editedAttendance[emp.id] === "Present" ? "#20af6e" : "#cb9620",
+                      fontSize: "1.025rem"
+                    }}
+                  >
+                    <select
+                      style={{
+                        marginRight: 12,
+                        borderRadius: 6,
+                        padding: "4px 10px",
+                        border: "1.2px solid #acf7ee",
+                        minWidth: 100
+                      }}
+                      value={editedAttendance[emp.id]}
+                      onChange={e => handleAttendanceChange(emp.id, e.target.value)}
+                      disabled={!editing}
+                    >
+                      <option value="Present">Present</option>
+                      <option value="Missed">Missed</option>
+                      <option value="Absent">Absent</option>
+                      <option value="Not Available">Not Available</option>
+                    </select>
+                    <span>{emp.name}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                className="btn-style"
+                style={{ marginTop: 30, background: "#18ae7a", color: "white", fontWeight: 700, fontSize: "1rem", padding: "10px 26px", borderRadius: 11 }}
+                onClick={handleStopStandup}
+              >
+                Stop
+              </button>
+            </div>
+          )}
+
+          {/* 4. Standup completed: Show who attended (checkbox, disabled) */}
+          {standup && standupCompleted && (
+            <div className="card-style" style={{ maxWidth: 520, margin: "30px auto 0" }}>
+              <h1 style={{ marginBottom: 13 }}>Team Standups</h1>
+              <div className="banner" style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}>
+                Standup completed for today!
+              </div>
+              <div style={{ marginTop: 18, color: "#238", fontWeight: 400, fontSize: "1.04rem" }}>
+                See who joined today's standup and stay connected. Checkmarks show who attended.
+              </div>
+              <div style={{ marginTop: 30 }}>
+                <div style={{ fontWeight: 600, color: "#267", marginBottom: 10, fontSize: "1.08rem" }}>People</div>
+                <div>
+                  <ul style={{ paddingLeft: 0, margin: 0 }}>
+                    {employees.map(emp => {
+                      const present = attendance[emp.id]?.status === "Present";
+                      return (
+                        <li
+                          key={emp.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            marginBottom: 9,
+                            fontWeight: 500,
+                            color: present ? "#20af6e" : "#cb9620",
+                            fontSize: "1.025rem"
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={present}
+                            readOnly
+                            disabled
+                            style={{
+                              marginRight: 12,
+                              accentColor: present ? "#11b26b" : "#beae6c",
+                              width: "18px",
+                              height: "18px",
+                              cursor: "default"
+                            }}
+                          />
+                          <span>{emp.name}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
                 <div className="banner" style={{ background: "#e5ffe5", color: "#159f46", marginTop: 16 }}>
                   Standup completed!
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
