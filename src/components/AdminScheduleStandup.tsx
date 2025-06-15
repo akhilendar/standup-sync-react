@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Standup = {
@@ -18,6 +19,7 @@ export default function AdminScheduleStandup() {
   const [standups, setStandups] = useState<Standup[]>([]);
   const [loading, setLoading] = useState(false);
   const { profile } = useUser();
+  const { admin } = useAdminAuth();
 
   const fetchStandups = async () => {
     setLoading(true);
@@ -46,7 +48,9 @@ export default function AdminScheduleStandup() {
   // Schedule standup for today at selected time
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) {
+    // Accept either Supabase profile (member), or admin session
+    const identifier = profile?.id || admin?.email;
+    if (!identifier) {
       toast({ title: "Not logged in", variant: "destructive" });
       return;
     }
@@ -65,7 +69,7 @@ export default function AdminScheduleStandup() {
     const { data, error } = await supabase.from("standups").insert([
       {
         scheduled_at,
-        created_by: profile.id
+        created_by: identifier  // Store either profile.id (uuid) or admin.email (string)
       }
     ]).select().single();
 
@@ -150,4 +154,3 @@ export default function AdminScheduleStandup() {
     </Card>
   );
 }
-
