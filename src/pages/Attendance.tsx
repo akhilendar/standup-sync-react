@@ -125,7 +125,7 @@ export default function Attendance() {
     await fetch(
       "https://corsproxy.io/?" +
         encodeURIComponent(
-          "https://script.google.com/macros/s/AKfycbxT25q53zD6Rwffh9vxyODeW9Q5HwXg6SBY-yCvVE5XWj1ClAe_hOQPLUuOOOR08y6Zuw/exec"
+          "https://script.google.com/macros/s/AKfycbwokjgqPpPTl6kwhU490ohZqLg8t7awNVNhX53dZfTZ0gBRys2TITEtVO5jF7Is_Ns2zA/exec"
         ),
       {
         method: "POST",
@@ -179,7 +179,7 @@ export default function Attendance() {
       const res = await fetch(
         "https://corsproxy.io/?" +
           encodeURIComponent(
-            "https://script.google.com/macros/s/AKfycbxT25q53zD6Rwffh9vxyODeW9Q5HwXg6SBY-yCvVE5XWj1ClAe_hOQPLUuOOOR08y6Zuw/exec"
+            "https://script.google.com/macros/s/AKfycbwokjgqPpPTl6kwhU490ohZqLg8t7awNVNhX53dZfTZ0gBRys2TITEtVO5jF7Is_Ns2zA/exec"
           ),
         {
           method: "POST",
