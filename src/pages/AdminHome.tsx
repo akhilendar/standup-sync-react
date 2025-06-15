@@ -1,9 +1,11 @@
+
 import React from "react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AppNavbar from "@/components/AppNavbar";
+import AdminScheduleStandup from "@/components/AdminScheduleStandup";
 
 const AdminHome = () => {
   const { admin, logout } = useAdminAuth();
@@ -43,6 +45,7 @@ const AdminHome = () => {
               Manage Attendance
             </Button>
           </div>
+          <AdminScheduleStandup />
         </CardContent>
       </Card>
     </div>

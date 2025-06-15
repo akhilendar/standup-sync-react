@@ -1,7 +1,10 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { useNavigate } from "react-router-dom";
+import ProfileEditor from "./ProfileEditor";
+import React from "react";
 
 const links = [
   { path: "/", label: "Home" },
@@ -14,6 +17,7 @@ export default function AppNavbar() {
   const { pathname } = useLocation();
   const { profile, loading, logout } = useUser();
   const navigate = useNavigate();
+  const [showProfile, setShowProfile] = React.useState(false);
 
   return (
     <nav className="w-full flex justify-center bg-background border-b">
@@ -34,9 +38,23 @@ export default function AppNavbar() {
         {!loading && profile && (
           <>
             <li>
-              <span className="px-2 text-muted-foreground">
-                {profile.name} ({profile.role})
-              </span>
+              <button
+                onClick={() => setShowProfile(true)}
+                className="flex items-center gap-2 px-2 text-muted-foreground hover:bg-muted/30 rounded transition-colors"
+              >
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.name}
+                    className="w-8 h-8 rounded-full object-cover border"
+                  />
+                ) : (
+                  <span className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-muted-foreground font-bold">
+                    {profile.name?.slice(0, 1).toUpperCase() ?? "U"}
+                  </span>
+                )}
+                <span className="hidden md:inline">{profile.name}</span>
+              </button>
             </li>
             <li>
               <button
@@ -59,6 +77,7 @@ export default function AppNavbar() {
           </li>
         )}
       </ul>
+      <ProfileEditor open={showProfile} onOpenChange={setShowProfile} />
     </nav>
   );
 }
