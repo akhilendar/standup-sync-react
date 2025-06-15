@@ -1,4 +1,3 @@
-
 // New home page that offers option for Admin or Team Member login/signup
 
 import React, { useState } from "react";
@@ -35,10 +34,10 @@ export default function Index() {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    if (user && profile) {
+    if ((user && profile) || admin) {
       navigate("/standups");
     }
-  }, [user, profile, navigate]);
+  }, [user, profile, admin, navigate]);
 
   // ADMIN AUTH
   const { admin, login: adminLogin } = useAdminAuth();

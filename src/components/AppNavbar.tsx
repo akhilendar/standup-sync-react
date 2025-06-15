@@ -2,22 +2,41 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
-import { useNavigate } from "react-router-dom";
 import ProfileEditor from "./ProfileEditor";
 import React from "react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 
+// Remove Login tab from header and update avatar/profile menu
 const links = [
   { path: "/", label: "Home" },
   { path: "/standups", label: "Standups" },
   { path: "/attendance", label: "Attendance" },
-  { path: "/admin/login", label: "Admin" }
+  { path: "/admin/employees", label: "Employees" }
 ];
 
 export default function AppNavbar() {
   const { pathname } = useLocation();
-  const { profile, loading, logout } = useUser();
-  const navigate = useNavigate();
+  const { profile, loading, logout: memberLogout } = useUser();
+  const { admin, logout: adminLogout } = useAdminAuth();
   const [showProfile, setShowProfile] = React.useState(false);
+
+  // Get current user information (profile/avatar) from either admin or member
+  const isLoggedIn = !!profile || !!admin;
+  const displayName = profile?.name || admin?.email || "User";
+  const displayAvatar = profile?.avatar_url || undefined;
+
+  // Combined logout handler
+  const handleLogout = () => {
+    if (admin) adminLogout();
+    if (profile) memberLogout();
+  };
 
   return (
     <nav className="w-full flex justify-center bg-background border-b">
@@ -35,49 +54,45 @@ export default function AppNavbar() {
             </Link>
           </li>
         ))}
-        {!loading && profile && (
-          <>
-            <li>
-              <button
-                onClick={() => setShowProfile(true)}
-                className="flex items-center gap-2 px-2 text-muted-foreground hover:bg-muted/30 rounded transition-colors"
-              >
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.name}
-                    className="w-8 h-8 rounded-full object-cover border"
-                  />
-                ) : (
-                  <span className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-muted-foreground font-bold">
-                    {profile.name?.slice(0, 1).toUpperCase() ?? "U"}
-                  </span>
-                )}
-                <span className="hidden md:inline">{profile.name}</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={logout}
-                className="py-2 px-3 rounded hover:bg-destructive hover:text-white transition-colors text-muted-foreground"
-              >Logout</button>
-            </li>
-          </>
-        )}
-        {!loading && !profile && (
+        {!loading && isLoggedIn && (
           <li>
-            <Link
-              to="/auth"
-              className={cn(
-                "py-2 px-3 rounded hover:bg-primary/20 transition-colors text-muted-foreground font-semibold"
-              )}
-            >
-              Login
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex items-center gap-2 px-2 text-muted-foreground hover:bg-muted/30 rounded transition-colors"
+                >
+                  {displayAvatar ? (
+                    <img
+                      src={displayAvatar}
+                      alt={displayName}
+                      className="w-8 h-8 rounded-full object-cover border"
+                    />
+                  ) : (
+                    <span className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-muted-foreground font-bold">
+                      {displayName?.slice(0, 1).toUpperCase() ?? "U"}
+                    </span>
+                  )}
+                  <span className="hidden md:inline">{displayName}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {profile && (
+                  <>
+                    <DropdownMenuItem onClick={() => setShowProfile(true)}>
+                      Change username / image
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onClick={handleLogout}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <ProfileEditor open={showProfile} onOpenChange={setShowProfile} />
           </li>
         )}
       </ul>
-      <ProfileEditor open={showProfile} onOpenChange={setShowProfile} />
     </nav>
   );
 }
