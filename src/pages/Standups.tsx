@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import AppNavbar from "@/components/AppNavbar";
 import AdminScheduleStandup from "@/components/AdminScheduleStandup";
@@ -16,7 +15,7 @@ export default function Standups() {
   const [standupCompleted, setStandupCompleted] = useState(false);
   const [standupStarted, setStandupStarted] = useState(false); // local state for demo
   const [editing, setEditing] = useState(false);
-  const [editedAttendance, setEditedAttendance] = useState<Record<string, string>>({}); // id -> status
+  const [editedAttendance, setEditedAttendance] = useState<Record<string, boolean>>({}); // id -> present
 
   useEffect(() => {
     async function fetchData() {
@@ -45,7 +44,6 @@ export default function Standups() {
           map[a.employee_id] = a;
         });
         setAttendance(map);
-        // Standup completed if everyone has "Present" or "Missed" or non-empty status
         setStandupCompleted(attData && attData.length === empData?.length && attData.length > 0);
       } else {
         setAttendance({});
@@ -59,20 +57,23 @@ export default function Standups() {
   const handleStartStandup = () => {
     setStandupStarted(true);
     setEditing(true);
+    // Set present checkbox based on previous attendance or default to false (i.e., not present)
     setEditedAttendance(
-      Object.fromEntries(employees.map(emp => [emp.id, attendance[emp.id]?.status || "Missed"]))
+      Object.fromEntries(
+        employees.map(emp => [emp.id, attendance[emp.id]?.status === "Present"])
+      )
     );
   };
 
-  const handleAttendanceChange = (empId: string, value: string) => {
-    setEditedAttendance(prev => ({ ...prev, [empId]: value }));
+  const handleAttendanceCheck = (empId: string, checked: boolean) => {
+    setEditedAttendance(prev => ({ ...prev, [empId]: checked }));
   };
 
   const handleStopStandup = async () => {
     if (!standup) return;
     // Save attendance to DB
     for (const emp of employees) {
-      const empStatus = editedAttendance[emp.id] || "Missed";
+      const empStatus = editedAttendance[emp.id] ? "Present" : "Missed";
       const found = attendance[emp.id];
       if (found) {
         await supabase
@@ -127,7 +128,7 @@ export default function Standups() {
             </div>
           )}
 
-          {/* 3. Standup started: Show attendance editing */}
+          {/* 3. Standup started: Show attendance editing using checkboxes */}
           {standup && standupStarted && !standupCompleted && (
             <div className="card-style" style={{ maxWidth: 520, margin: "40px auto 0" }}>
               <h2 style={{ marginBottom: 16 }}>Mark Attendance</h2>
@@ -141,27 +142,23 @@ export default function Standups() {
                       alignItems: "center",
                       marginBottom: 12,
                       fontWeight: 500,
-                      color: editedAttendance[emp.id] === "Present" ? "#20af6e" : "#cb9620",
+                      color: editedAttendance[emp.id] ? "#20af6e" : "#cb9620",
                       fontSize: "1.025rem"
                     }}
                   >
-                    <select
+                    <input
+                      type="checkbox"
+                      checked={!!editedAttendance[emp.id]}
+                      onChange={e => handleAttendanceCheck(emp.id, e.target.checked)}
+                      disabled={!editing}
                       style={{
                         marginRight: 12,
-                        borderRadius: 6,
-                        padding: "4px 10px",
-                        border: "1.2px solid #acf7ee",
-                        minWidth: 100
+                        accentColor: "#20af6e",
+                        width: "20px",
+                        height: "20px",
+                        cursor: editing ? "pointer" : "default"
                       }}
-                      value={editedAttendance[emp.id]}
-                      onChange={e => handleAttendanceChange(emp.id, e.target.value)}
-                      disabled={!editing}
-                    >
-                      <option value="Present">Present</option>
-                      <option value="Missed">Missed</option>
-                      <option value="Absent">Absent</option>
-                      <option value="Not Available">Not Available</option>
-                    </select>
+                    />
                     <span>{emp.name}</span>
                   </li>
                 ))}
