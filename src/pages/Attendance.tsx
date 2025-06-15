@@ -124,7 +124,7 @@ export default function Attendance() {
       status: map[emp.id]?.status || "Missed",
     }));
     await fetch(
-      "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
+      "https://script.google.com/macros/s/AKfycbx7meUcN9qKI9RwLGrpEjEJKIxgidr4BkxHqCyimyviNsK3IMBegtcoNzLwK-zWphge_w/exec",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,7 +175,7 @@ export default function Attendance() {
     }));
     try {
       const res = await fetch(
-        "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
+        "https://script.google.com/macros/s/AKfycbx7meUcN9qKI9RwLGrpEjEJKIxgidr4BkxHqCyimyviNsK3IMBegtcoNzLwK-zWphge_w/exec",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
