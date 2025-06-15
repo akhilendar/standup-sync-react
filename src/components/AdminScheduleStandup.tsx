@@ -49,10 +49,10 @@ export default function AdminScheduleStandup() {
     }
     setLoading(true);
     // Compose scheduled_at as yyyy-mm-ddTHH:mm:00.000+00:00 (UTC)
-    let [hours, minutes] = time.split(":").map(Number);
-    let now = new Date();
-    now.setHours(hours, minutes, 0, 0);
-    const scheduled_at = now.toISOString(); // keep as ISO with time
+    const today = new Date();
+    const [hours, minutes] = time.split(":").map(Number);
+    today.setHours(hours, minutes, 0, 0);
+    const scheduled_at = today.toISOString(); // ISO with time
     const { error } = await supabase.from("standups").insert([
       {
         scheduled_at,      // store ISO datetime
@@ -67,6 +67,14 @@ export default function AdminScheduleStandup() {
       fetchStandups();
     }
     setLoading(false);
+  };
+
+  // Helper to set time input to "now"
+  const setToNowTime = () => {
+    const now = new Date();
+    const hour = now.getHours().toString().padStart(2,"0");
+    const minute = now.getMinutes().toString().padStart(2,"0");
+    setTime(`${hour}:${minute}`);
   };
 
   return (
@@ -87,6 +95,9 @@ export default function AdminScheduleStandup() {
               min="06:00"
               max="23:00"
             />
+            <Button type="button" size="sm" className="ml-2" variant="ghost" onClick={setToNowTime}>
+              Now
+            </Button>
           </div>
           <Button type="submit" disabled={loading}>Add</Button>
         </form>
