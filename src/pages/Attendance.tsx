@@ -113,7 +113,7 @@ export default function Attendance() {
     setAttendance(map);
     setEditedAtt({});
     setEditing(false);
-    // Google Sheets sync via CORS proxy TO YOUR NEW DEPLOYMENT
+    // Google Sheets sync via your provided deployment
     const dataToSend = employees.map((emp) => ({
       standup_id: standup.id,
       standup_time: new Date(standup.scheduled_at).toLocaleString(),
@@ -123,7 +123,7 @@ export default function Attendance() {
       status: map[emp.id]?.status || "Missed",
     }));
     await fetch(
-      "https://script.google.com/macros/s/AKfycbzNJR1rMQLOCtrj5xsPGtu4cmQSi3jegzXqeD5oG1jchrIo3YLz1_ALEhp51BZNR3D96g/exec",
+      "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
       {
         method: "POST",
         mode: "cors",
@@ -175,7 +175,7 @@ export default function Attendance() {
     }));
     try {
       const res = await fetch(
-        "https://script.google.com/macros/s/AKfycbzNJR1rMQLOCtrj5xsPGtu4cmQSi3jegzXqeD5oG1jchrIo3YLz1_ALEhp51BZNR3D96g/exec",
+        "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
         {
           method: "POST",
           mode: "cors",
