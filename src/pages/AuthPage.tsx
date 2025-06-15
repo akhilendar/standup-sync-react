@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import AppNavbar from "@/components/AppNavbar";
 import { useUser } from "@/hooks/useUser";
 import { useNavigate } from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
 
 enum Mode {
   Login = "Login",
@@ -53,6 +54,20 @@ export default function AuthPage() {
     setLoadingForm(false);
   };
 
+  const handleGoogleLogin = async () => {
+    setLoadingForm(true);
+    setError(null);
+    const redirectTo = `${window.location.origin}/standups`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo
+      }
+    });
+    if (error) setError(error.message);
+    setLoadingForm(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <AppNavbar />
@@ -64,6 +79,21 @@ export default function AuthPage() {
           <CardContent>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full flex gap-2 items-center justify-center"
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={loadingForm}
+                >
+                  <FcGoogle className="text-xl" />
+                  {loadingForm ? "Signing in..." : "Sign in with Google"}
+                </Button>
+                <div className="flex items-center gap-2">
+                  <span className="border-b grow border-muted-foreground/10"></span>
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <span className="border-b grow border-muted-foreground/10"></span>
+                </div>
                 <Input
                   type="email"
                   value={email}
