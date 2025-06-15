@@ -25,6 +25,11 @@ import TeamMemberAuthCard from "@/components/TeamMemberAuthCard";
 import AdminAuthCard from "@/components/AdminAuthCard";
 
 export default function Index() {
+  // Admin authentication state (fix for missing variables)
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState<string | null>(null);
+
   // Move useAdminAuth hook usage to the top so `admin` is initialized before use
   const { admin, login: adminLogin } = useAdminAuth();
 
