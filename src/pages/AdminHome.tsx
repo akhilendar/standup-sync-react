@@ -4,7 +4,8 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "@/components/AppNavbar";
 import { supabase } from "@/integrations/supabase/client";
-import "./AdminHome.css"; // New CSS for this page
+import "./AdminHome.css"; // Standalone admin dashboard tweaks
+// Removed Tailwind imports -- using global CSS now.
 
 const AdminHome = () => {
   const { admin, logout } = useAdminAuth();
@@ -46,33 +47,37 @@ const AdminHome = () => {
   }, []);
 
   return (
-    <div className="admin-home-bg">
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: 0, margin: 0 }}>
       <AppNavbar />
-      <div className="admin-home-content">
-        <div className="admin-home-card">
-          <div className="admin-home-header">
-            <h1 className="admin-home-title">Admin Dashboard</h1>
-            <button className="admin-home-logout-btn" onClick={logout}>Logout</button>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="card-style" style={{ maxWidth: 450 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <h1>Admin Dashboard</h1>
+            <button className="btn-style" style={{ fontSize: "1rem", padding: "7px 17px", borderRadius: 12 }} onClick={logout}>Logout</button>
           </div>
-          <div className="admin-home-card-content">
-            <div className="admin-home-welcome">
-              Welcome, <span>{admin?.email}!</span>
+          <div>
+            <div className="banner" style={{ marginBottom: 32, marginTop: 0, background: "linear-gradient(90deg,#d4eeff 0%,#cbeeec 80%)" }}>
+              Welcome, <span style={{ color: "#088", fontWeight: 800 }}>{admin?.email}!</span>
             </div>
             {summary.standupTime ? (
-              <div className="admin-home-summary">
-                <div>
-                  <span>Today's Standup:</span>
-                  <span className="admin-home-standup-time">{summary.standupTime}</span>
-                </div>
-                <div>
-                  <span>Attendance:</span>
-                  <span className="admin-home-attendance">
-                    {summary.present} / {summary.total}
-                  </span>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: "1.08rem", color: "#185b7e", display: "flex", flexDirection: "column", gap: "12px", fontWeight: 600 }}>
+                  <div>
+                    <span>Today's Standup:</span>
+                    <span style={{ marginLeft: 11, color: "#117ddb", fontSize: "1.21rem", fontWeight: "bold"}}>
+                      {summary.standupTime}
+                    </span>
+                  </div>
+                  <div>
+                    <span>Attendance:</span>
+                    <span style={{ marginLeft: 9, color: "#18ad7c", fontWeight: "bold", fontSize: "1.19rem" }}>
+                      {summary.present} / {summary.total}
+                    </span>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="admin-home-no-standup">
+              <div className="banner" style={{ color: "#b85c42", background: "linear-gradient(90deg,#ffece6 0%, #f4e6e6 100%)", marginTop: 20, fontWeight: 600, fontSize: "1.07rem" }}>
                 No standup scheduled today.
               </div>
             )}
