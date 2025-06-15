@@ -1,5 +1,3 @@
-// New home page that offers option for Admin or Team Member login/signup
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -21,6 +19,11 @@ enum TeamMemberAuthMode {
   Signup = "Sign Up",
 }
 
+import HomeStreakBanner from "@/components/HomeStreakBanner";
+import AuthModeChooser from "@/components/AuthModeChooser";
+import TeamMemberAuthCard from "@/components/TeamMemberAuthCard";
+import AdminAuthCard from "@/components/AdminAuthCard";
+
 export default function Index() {
   // Move useAdminAuth hook usage to the top so `admin` is initialized before use
   const { admin, login: adminLogin } = useAdminAuth();
@@ -40,19 +43,13 @@ export default function Index() {
   const [attendanceStreak, setAttendanceStreak] = useState<number | "N/A" | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
 
+  // --- Routing refactor: only admins are redirected away from "/" (home) page ---
   React.useEffect(() => {
-    if ((user && profile) || admin) {
-      navigate("/standups");
+    if (admin) {
+      navigate("/admin");
     }
-  }, [user, profile, admin, navigate]);
-
-  // ADMIN AUTH
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [adminError, setAdminError] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (admin) navigate("/admin");
+    // For team members: don't navigate to "/standups" automatically!
+    // They will see streak/motivation here at "/"
   }, [admin, navigate]);
 
   // Fetch and calculate attendance streak for logged-in users (not admin)
@@ -124,7 +121,9 @@ export default function Index() {
     }
   }, [user, profile, admin]);
 
-  // Handlers
+  // --- Handlers ---
+
+  // After login/signup, just reload to let onAuthStateChange trigger
   const handleTeamMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -132,9 +131,9 @@ export default function Index() {
     if (tmMode === TeamMemberAuthMode.Login) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
+      // Don't navigate here; let useUser's effect respond
     } else {
-      // On signup, pass name to user_metadata for trigger
-      const redirectUrl = `${window.location.origin}/standups`;
+      const redirectUrl = `${window.location.origin}/`; // Home, not standups
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -152,12 +151,10 @@ export default function Index() {
   const handleGoogleLogin = async () => {
     setLoadingForm(true);
     setError(null);
-    const redirectTo = `${window.location.origin}/standups`;
+    const redirectTo = `${window.location.origin}/`;
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo
-      }
+      provider: "google",
+      options: { redirectTo }
     });
     if (error) setError(error.message);
     setLoadingForm(false);
@@ -171,167 +168,58 @@ export default function Index() {
     }
   };
 
+  // When logged in (user+profile) or admin, show streak banner
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-sm">
-          {/* Show attendance streak or motivation for logged in users */}
           {(user && profile) || admin ? (
-            <div className="mb-6">
-              <div className="text-lg font-semibold text-center flex flex-col gap-1">
-                <span>Your Attendance Streak:</span>
-                <span className="text-3xl font-bold text-primary">
-                  {attendanceLoading ? (
-                    "Loading..."
-                  ) : (
-                    attendanceStreak === "N/A" ? (
-                      "N/A"
-                    ) : attendanceStreak === null || attendanceStreak === 0 ? (
-                      <>
-                        <span className="block text-base font-medium text-muted-foreground mt-1">
-                          No attendance streak yet? <br />
-                          <span className="text-primary font-bold">Every habit starts with a single step!</span><br />
-                          Join your first standup today.
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        {attendanceStreak}
-                        <span className="text-base font-medium ml-1">
-                          day{attendanceStreak === 1 ? "" : "s"}
-                        </span>
-                      </>
-                    )
-                  )}
-                </span>
-              </div>
-            </div>
+            <HomeStreakBanner
+              attendanceStreak={attendanceStreak}
+              attendanceLoading={attendanceLoading}
+              isAdmin={!!admin}
+            />
           ) : null}
-
           {entryMode === EntryMode.Choose && (
-            <div className="space-y-6 text-center">
-              <h1 className="text-3xl font-bold mb-4">Welcome to Your Attendance Tracker</h1>
-              <div className="space-y-2">
-                <Button className="w-full h-12 text-lg" onClick={() => setEntryMode(EntryMode.TeamMember)}>Team Member</Button>
-                <Button className="w-full h-12 text-lg" variant="outline" onClick={() => setEntryMode(EntryMode.Admin)}>Admin</Button>
-              </div>
-            </div>
+            <AuthModeChooser
+              onChoose={(choice) =>
+                setEntryMode(choice === "TeamMember" ? EntryMode.TeamMember : EntryMode.Admin)
+              }
+            />
           )}
-
           {entryMode === EntryMode.TeamMember && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{tmMode === TeamMemberAuthMode.Login ? "Team Member Login" : "Team Member Sign Up"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleTeamMemberSubmit}>
-                  <div className="space-y-4">
-                    <Button
-                      variant="outline"
-                      className="w-full flex gap-2 items-center justify-center"
-                      type="button"
-                      onClick={handleGoogleLogin}
-                      disabled={loadingForm}
-                    >
-                      <FcGoogle className="text-xl" />
-                      {loadingForm ? "Signing in..." : "Sign in with Google"}
-                    </Button>
-                    <div className="flex items-center gap-2">
-                      <span className="border-b grow border-muted-foreground/10"></span>
-                      <span className="text-xs text-muted-foreground">or</span>
-                      <span className="border-b grow border-muted-foreground/10"></span>
-                    </div>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="Email"
-                      required
-                      autoComplete="username"
-                    />
-                    {tmMode === TeamMemberAuthMode.Signup && (
-                      <Input
-                        type="text"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        placeholder="Full Name"
-                        required
-                        autoComplete="name"
-                      />
-                    )}
-                    <Input
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="Password"
-                      required
-                      autoComplete={tmMode === TeamMemberAuthMode.Login ? "current-password" : "new-password"}
-                    />
-                    {error && <div className="text-sm text-red-500">{error}</div>}
-                    <Button type="submit" className="w-full mt-2" disabled={loadingForm}>
-                      {loadingForm ? "Loading..." : (tmMode === TeamMemberAuthMode.Login ? "Login" : "Sign Up")}
-                    </Button>
-                    <div className="flex justify-between text-sm pt-3">
-                      <button
-                        type="button"
-                        className="underline"
-                        onClick={() => setTmMode(tmMode === TeamMemberAuthMode.Login ? TeamMemberAuthMode.Signup : TeamMemberAuthMode.Login)}
-                      >
-                        {tmMode === TeamMemberAuthMode.Login
-                          ? "Don't have an account? Sign up"
-                          : "Already have an account? Login"}
-                      </button>
-                      <button
-                        type="button"
-                        className="underline"
-                        onClick={() => setEntryMode(EntryMode.Choose)}
-                      >
-                        Back
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+            <TeamMemberAuthCard
+              mode={tmMode}
+              email={email}
+              setEmail={setEmail}
+              name={name}
+              setName={setName}
+              password={password}
+              setPassword={setPassword}
+              error={error}
+              loadingForm={loadingForm}
+              onSubmit={handleTeamMemberSubmit}
+              onGoogle={handleGoogleLogin}
+              onSwitchMode={() =>
+                setTmMode(
+                  tmMode === TeamMemberAuthMode.Login
+                    ? TeamMemberAuthMode.Signup
+                    : TeamMemberAuthMode.Login
+                )
+              }
+              onBack={() => setEntryMode(EntryMode.Choose)}
+            />
           )}
-
           {entryMode === EntryMode.Admin && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Login</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleAdminSubmit}>
-                  <div className="space-y-4">
-                    <Input
-                      type="text"
-                      value={adminEmail}
-                      onChange={e => setAdminEmail(e.target.value)}
-                      placeholder="Admin username"
-                      required
-                    />
-                    <Input
-                      type="password"
-                      value={adminPassword}
-                      onChange={e => setAdminPassword(e.target.value)}
-                      placeholder="Password"
-                      required
-                    />
-                    {adminError && <div className="text-sm text-red-500">{adminError}</div>}
-                    <Button type="submit" className="w-full mt-2">Login</Button>
-                    <div className="flex justify-end pt-2">
-                      <button
-                        type="button"
-                        className="underline text-sm"
-                        onClick={() => setEntryMode(EntryMode.Choose)}
-                      >
-                        Back
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+            <AdminAuthCard
+              adminEmail={adminEmail}
+              setAdminEmail={setAdminEmail}
+              adminPassword={adminPassword}
+              setAdminPassword={setAdminPassword}
+              adminError={adminError}
+              onSubmit={handleAdminSubmit}
+              onBack={() => setEntryMode(EntryMode.Choose)}
+            />
           )}
         </div>
       </div>
