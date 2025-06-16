@@ -122,15 +122,19 @@ export default function Attendance() {
       employee_email: emp.email,
       status: map[emp.id]?.status || "Missed",
     }));
-    await fetch(
-      "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
-      {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: dataToSend }),
-      }
-    );
+    try {
+      await fetch(
+        "https://cors-anywhere.herokuapp.com/https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records: dataToSend }),
+        }
+      );
+    } catch (error) {
+      console.error("Error syncing to Google Sheets:", error);
+    }
     setLoading(false);
   };
 
@@ -178,7 +182,7 @@ export default function Attendance() {
         "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
         {
           method: "POST",
-          mode: "cors",
+          mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ records: dataToSend }),
         }
