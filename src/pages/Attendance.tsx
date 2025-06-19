@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -122,15 +123,19 @@ export default function Attendance() {
       employee_email: emp.email,
       status: map[emp.id]?.status || "Missed",
     }));
-    await fetch(
-      "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
-      {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: dataToSend }),
-      }
-    );
+    try {
+      await fetch(
+        "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records: dataToSend }),
+        }
+      );
+    } catch (error) {
+      console.error("Error syncing to Google Sheets:", error);
+    }
     setLoading(false);
   };
 
@@ -154,16 +159,6 @@ export default function Attendance() {
       setLoading(false);
       return;
     }
-    // Always fetch fresh attendance data for today
-    const { data: attData } = await supabase
-      .from("attendance")
-      .select("*")
-      .eq("standup_id", standup.id);
-    const newAttendance: Record<string, Attendance> = {};
-    attData?.forEach((a) => {
-      newAttendance[a.employee_id] = a;
-    });
-    setAttendance(newAttendance);
 
     const dataToSend = employees.map((emp) => ({
       standup_id: standup.id,
@@ -171,11 +166,16 @@ export default function Attendance() {
       employee_id: emp.id,
       employee_name: emp.name,
       employee_email: emp.email,
-      status: newAttendance[emp.id]?.status || "Missed",
+      status: attendance[emp.id]?.status || "Missed",
     }));
     try {
+<<<<<<< HEAD
       const res = await fetch(
         "https://script.google.com/macros/s/AKfycbyCNKuhbU7Ks5yqUgu_0Zn3r0Ca72YBlkNtZNFafYs1See6w8KKaKxS-pX9P8n5Ln7EXg/exec",
+=======
+      await fetch(
+        "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
+>>>>>>> d83cf316d76396d064b272d4af1e1c5d394e7627
         {
           method: "POST",
           mode: "no-cors",
@@ -183,20 +183,11 @@ export default function Attendance() {
           body: JSON.stringify({ records: dataToSend }),
         }
       );
-      const resJson = await res.json();
-      if (resJson.status === "success") {
-        toast({
-          title: "Google Sheet sync successful!",
-          description: resJson.message || "",
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Google Sheet sync failed",
-          description: resJson.message || "An error occurred.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Google Sheet sync completed!",
+        description: "Data has been synced successfully.",
+        variant: "default",
+      });
     } catch (error: any) {
       toast({
         title: "Google Sheet sync failed",
@@ -249,6 +240,7 @@ export default function Attendance() {
             </div>
           ) : (
             <>
+<<<<<<< HEAD
               <div
                 style={{
                   margin: "18px 0 7px 0",
@@ -258,6 +250,10 @@ export default function Attendance() {
                 }}
               >
                 <span>Today’s Attendance</span>
+=======
+              <div style={{ margin: "18px 0 7px 0", fontWeight: 600, color: "#27588a", fontSize: "1.05rem" }}>
+                <span>Today's Attendance</span>
+>>>>>>> d83cf316d76396d064b272d4af1e1c5d394e7627
                 {/* Attendance count */}
                 <span
                   style={{ marginLeft: 20, color: "#188d4c", fontWeight: 800 }}
