@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,10 @@ export default function Employees() {
   });
 
   // Form for adding employee
-  const { register, handleSubmit, reset } = useForm<{ name: string; email: string }>();
+  const { register, handleSubmit, reset } = useForm<{
+    name: string;
+    email: string;
+  }>();
 
   function onSubmit(values: { name: string; email: string }) {
     addEmployee(values, {
@@ -69,9 +71,19 @@ export default function Employees() {
           <CardTitle>Add Employee</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-            <Input placeholder="Name" {...register("name", { required: true })} />
-            <Input placeholder="Email" type="email" {...register("email", { required: true })} />
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <Input
+              placeholder="Name"
+              {...register("name", { required: true })}
+            />
+            <Input
+              placeholder="Email"
+              type="email"
+              {...register("email", { required: true })}
+            />
             <Button type="submit" disabled={isPending}>
               {isPending ? "Adding..." : "Add Employee"}
             </Button>

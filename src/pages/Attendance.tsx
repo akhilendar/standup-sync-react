@@ -53,7 +53,7 @@ export default function Attendance() {
   // Handler: initiate edit mode
   const handleEdit = () => {
     const initial = Object.fromEntries(
-      employees.map(emp => [emp.id, attendance[emp.id]?.status || "Missed"])
+      employees.map((emp) => [emp.id, attendance[emp.id]?.status || "Missed"])
     );
     setEditedAtt(initial);
     setEditing(true);
@@ -61,7 +61,7 @@ export default function Attendance() {
 
   // Handler: Change status in edit mode
   const handleChange = (empId: string, val: string) => {
-    setEditedAtt(prev => ({ ...prev, [empId]: val }));
+    setEditedAtt((prev) => ({ ...prev, [empId]: val }));
   };
 
   // Save edited attendance to DB (insert or update)
@@ -82,11 +82,11 @@ export default function Attendance() {
       return;
     }
     // Upsert attendance for each employee
-    const bulk = employees.map(emp => {
+    const bulk = employees.map((emp) => {
       return {
         standup_id: standup.id,
         employee_id: emp.id,
-        status: editedAtt[emp.id] || "Missed"
+        status: editedAtt[emp.id] || "Missed",
       };
     });
     for (let row of bulk) {
@@ -175,10 +175,10 @@ export default function Attendance() {
     }));
     try {
       const res = await fetch(
-        "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
+        "https://script.google.com/macros/s/AKfycbyCNKuhbU7Ks5yqUgu_0Zn3r0Ca72YBlkNtZNFafYs1See6w8KKaKxS-pX9P8n5Ln7EXg/exec",
         {
           method: "POST",
-          mode: "cors",
+          mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ records: dataToSend }),
         }
@@ -215,26 +215,65 @@ export default function Attendance() {
   ).length;
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    >
       <AppNavbar />
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <div className="card-style" style={{ maxWidth: 700 }}>
           <h1 style={{ marginBottom: 18 }}>Attendance</h1>
-          <button className="btn-style" onClick={handleSyncSheet} disabled={loading}>
+          <button
+            className="btn-style"
+            onClick={handleSyncSheet}
+            disabled={loading}
+          >
             Resync to Google Sheet
           </button>
           {loading ? (
-            <div className="banner" style={{ background: "#e6eeff", color: "#3366a3", margin: "18px 0" }}>Loading...</div>
+            <div
+              className="banner"
+              style={{
+                background: "#e6eeff",
+                color: "#3366a3",
+                margin: "18px 0",
+              }}
+            >
+              Loading...
+            </div>
           ) : (
             <>
-              <div style={{ margin: "18px 0 7px 0", fontWeight: 600, color: "#27588a", fontSize: "1.05rem" }}>
+              <div
+                style={{
+                  margin: "18px 0 7px 0",
+                  fontWeight: 600,
+                  color: "#27588a",
+                  fontSize: "1.05rem",
+                }}
+              >
                 <span>Today’s Attendance</span>
                 {/* Attendance count */}
-                <span style={{ marginLeft: 20, color: "#188d4c", fontWeight: 800 }}>
+                <span
+                  style={{ marginLeft: 20, color: "#188d4c", fontWeight: 800 }}
+                >
                   Present: {presentCount} / {totalEmployees}
                 </span>
                 {!editing && (
-                  <button className="btn-style" style={{ float: "right", fontSize: 14, padding: "5px 16px", borderRadius: 12, marginTop: -2 }}
+                  <button
+                    className="btn-style"
+                    style={{
+                      float: "right",
+                      fontSize: 14,
+                      padding: "5px 16px",
+                      borderRadius: 12,
+                      marginTop: -2,
+                    }}
                     onClick={handleEdit}
                   >
                     Edit
@@ -255,9 +294,19 @@ export default function Attendance() {
                       <tr
                         key={emp.id}
                         className={
-                          (editing
-                            ? (editedAtt[emp.id] === "Present" ? "table-row-present" : editedAtt[emp.id] === "Missed" ? "table-row-missed" : "table-row-absent")
-                            : (attendance[emp.id]?.status === "Present" ? "table-row-present" : attendance[emp.id]?.status === "Missed" ? "table-row-missed" : attendance[emp.id]?.status === "Absent" ? "table-row-absent" : "table-row-absent"))
+                          editing
+                            ? editedAtt[emp.id] === "Present"
+                              ? "table-row-present"
+                              : editedAtt[emp.id] === "Missed"
+                              ? "table-row-missed"
+                              : "table-row-absent"
+                            : attendance[emp.id]?.status === "Present"
+                            ? "table-row-present"
+                            : attendance[emp.id]?.status === "Missed"
+                            ? "table-row-missed"
+                            : attendance[emp.id]?.status === "Absent"
+                            ? "table-row-absent"
+                            : "table-row-absent"
                         }
                       >
                         <td>{emp.name}</td>
@@ -275,23 +324,29 @@ export default function Attendance() {
                                 outline: "none",
                               }}
                               value={editedAtt[emp.id]}
-                              onChange={e => handleChange(emp.id, e.target.value)}
+                              onChange={(e) =>
+                                handleChange(emp.id, e.target.value)
+                              }
                               data-testid={`status-select-${emp.id}`}
                             >
                               <option value="Present">Present</option>
                               <option value="Missed">Missed</option>
                               <option value="Absent">Absent</option>
-                              <option value="Not Available">Not Available</option>
+                              <option value="Not Available">
+                                Not Available
+                              </option>
                             </select>
-                          ) : (
+                          ) : attendance[emp.id]?.status ? (
                             attendance[emp.id]?.status
-                              ? attendance[emp.id]?.status
-                              : <span style={{ color: "#be8808" }}>Missed</span>
+                          ) : (
+                            <span style={{ color: "#be8808" }}>Missed</span>
                           )}
                         </td>
                         {editing && (
                           <td>
-                            <span role="img" aria-label="editing">✏️</span>
+                            <span role="img" aria-label="editing">
+                              ✏️
+                            </span>
                           </td>
                         )}
                       </tr>
@@ -300,18 +355,38 @@ export default function Attendance() {
                 </table>
               </div>
               {editing && (
-                <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end", gap: 9 }}>
+                <div
+                  style={{
+                    marginTop: 22,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 9,
+                  }}
+                >
                   <button
                     className="btn-style"
-                    style={{ fontSize: "1rem", borderRadius: 10, padding: "8px 22px" }}
+                    style={{
+                      fontSize: "1rem",
+                      borderRadius: 10,
+                      padding: "8px 22px",
+                    }}
                     onClick={handleSave}
                   >
                     Add to Database
                   </button>
                   <button
                     className="btn-style"
-                    style={{ background: "#e4e8fc", color: "#1272a5", fontWeight: 700, borderRadius: 10, padding: "8px 19px" }}
-                    onClick={() => { setEditing(false); setEditedAtt({}); }}
+                    style={{
+                      background: "#e4e8fc",
+                      color: "#1272a5",
+                      fontWeight: 700,
+                      borderRadius: 10,
+                      padding: "8px 19px",
+                    }}
+                    onClick={() => {
+                      setEditing(false);
+                      setEditedAtt({});
+                    }}
                   >
                     Cancel
                   </button>
