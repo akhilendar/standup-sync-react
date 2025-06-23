@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,10 +31,7 @@ export default function Attendance() {
         .limit(1)
         .maybeSingle();
       if (standup) {
-        const { data: attData } = await supabase
-          .from("attendance")
-          .select("*")
-          .eq("standup_id", standup.id);
+        const { data: attData } = await supabase.from("attendance").select("*").eq("standup_id", standup.id);
         const map: Record<string, Attendance> = {};
         attData?.forEach((a) => {
           map[a.employee_id] = a;
@@ -53,9 +49,7 @@ export default function Attendance() {
 
   // Handler: initiate edit mode
   const handleEdit = () => {
-    const initial = Object.fromEntries(
-      employees.map((emp) => [emp.id, attendance[emp.id]?.status || "Missed"])
-    );
+    const initial = Object.fromEntries(employees.map((emp) => [emp.id, attendance[emp.id]?.status || "Missed"]));
     setEditedAtt(initial);
     setEditing(true);
   };
@@ -90,7 +84,7 @@ export default function Attendance() {
         status: editedAtt[emp.id] || "Missed",
       };
     });
-    for (let row of bulk) {
+    for (const row of bulk) {
       const found = attendance[row.employee_id];
       if (found) {
         await supabase
@@ -103,10 +97,7 @@ export default function Attendance() {
       }
     }
     // After saving, reload state from DB
-    const { data: attData } = await supabase
-      .from("attendance")
-      .select("*")
-      .eq("standup_id", standup.id);
+    const { data: attData } = await supabase.from("attendance").select("*").eq("standup_id", standup.id);
     const map: Record<string, Attendance> = {};
     attData?.forEach((a) => {
       map[a.employee_id] = a;
@@ -169,13 +160,8 @@ export default function Attendance() {
       status: attendance[emp.id]?.status || "Missed",
     }));
     try {
-<<<<<<< HEAD
       const res = await fetch(
         "https://script.google.com/macros/s/AKfycbyCNKuhbU7Ks5yqUgu_0Zn3r0Ca72YBlkNtZNFafYs1See6w8KKaKxS-pX9P8n5Ln7EXg/exec",
-=======
-      await fetch(
-        "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
->>>>>>> d83cf316d76396d064b272d4af1e1c5d394e7627
         {
           method: "POST",
           mode: "no-cors",
@@ -188,10 +174,10 @@ export default function Attendance() {
         description: "Data has been synced successfully.",
         variant: "default",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Google Sheet sync failed",
-        description: error?.message || "An error occurred.",
+        description: error instanceof Error ? error.message : "An error occurred.",
         variant: "destructive",
       });
     }
@@ -201,14 +187,11 @@ export default function Attendance() {
   // Compute counts
   const totalEmployees = employees.length;
   const presentCount = employees.filter(
-    (emp) =>
-      (editing ? editedAtt[emp.id] : attendance[emp.id]?.status) === "Present"
+    (emp) => (editing ? editedAtt[emp.id] : attendance[emp.id]?.status) === "Present"
   ).length;
 
   return (
-    <div
-      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
-    >
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <AppNavbar />
       <div
         style={{
@@ -220,11 +203,7 @@ export default function Attendance() {
       >
         <div className="card-style" style={{ maxWidth: 700 }}>
           <h1 style={{ marginBottom: 18 }}>Attendance</h1>
-          <button
-            className="btn-style"
-            onClick={handleSyncSheet}
-            disabled={loading}
-          >
+          <button className="btn-style" onClick={handleSyncSheet} disabled={loading}>
             Resync to Google Sheet
           </button>
           {loading ? (
@@ -240,7 +219,6 @@ export default function Attendance() {
             </div>
           ) : (
             <>
-<<<<<<< HEAD
               <div
                 style={{
                   margin: "18px 0 7px 0",
@@ -249,15 +227,9 @@ export default function Attendance() {
                   fontSize: "1.05rem",
                 }}
               >
-                <span>Today’s Attendance</span>
-=======
-              <div style={{ margin: "18px 0 7px 0", fontWeight: 600, color: "#27588a", fontSize: "1.05rem" }}>
                 <span>Today's Attendance</span>
->>>>>>> d83cf316d76396d064b272d4af1e1c5d394e7627
                 {/* Attendance count */}
-                <span
-                  style={{ marginLeft: 20, color: "#188d4c", fontWeight: 800 }}
-                >
+                <span style={{ marginLeft: 20, color: "#188d4c", fontWeight: 800 }}>
                   Present: {presentCount} / {totalEmployees}
                 </span>
                 {!editing && (
@@ -320,17 +292,13 @@ export default function Attendance() {
                                 outline: "none",
                               }}
                               value={editedAtt[emp.id]}
-                              onChange={(e) =>
-                                handleChange(emp.id, e.target.value)
-                              }
+                              onChange={(e) => handleChange(emp.id, e.target.value)}
                               data-testid={`status-select-${emp.id}`}
                             >
                               <option value="Present">Present</option>
                               <option value="Missed">Missed</option>
                               <option value="Absent">Absent</option>
-                              <option value="Not Available">
-                                Not Available
-                              </option>
+                              <option value="Not Available">Not Available</option>
                             </select>
                           ) : attendance[emp.id]?.status ? (
                             attendance[emp.id]?.status
