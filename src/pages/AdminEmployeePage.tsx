@@ -5,8 +5,10 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+import AppNavbar from "@/components/AppNavbar";
+
 interface Employee {
-  id: string;
+  employee_id: string;
   name: string;
   email: string;
   ratings_sheet_link: string | null;
@@ -24,18 +26,22 @@ const AdminEmployeePage = () => {
       setLoading(true);
       try {
         // Fetch employee details
-        const { data: employeeData, error: employeeError } = await supabase
-          .from("employees")
-          .select("*")
-          .eq("id", id)
-          .single();
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const { data, error } = await supabase.from<Employee>("employees").select("*").eq("employee_id", id).single();
+
+        const employeeData = data as unknown as Employee;
+        const employeeError = error;
         if (employeeError) throw employeeError;
-        console.log("Employee Data:", employeeData);
         setEmployee({
-          id: employeeData.id,
+          employee_id: employeeData.employee_id,
           name: employeeData.name,
           email: employeeData.email,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           ratings_sheet_link: employeeData.ratings_sheet_link ?? null,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           role: employeeData.role ?? "",
         });
       } catch (error) {
@@ -53,26 +59,29 @@ const AdminEmployeePage = () => {
   return loading ? (
     <div>Loading...</div>
   ) : (
-    <Card>
-      <CardHeader className="text-center">
-        <CardTitle>{employee.name}</CardTitle>
-        <CardDescription>{employee.email}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="feedback" className="flex flex-col items-center justify-center">
-          <TabsList className="grid w-full grid-cols-3 max-w-96">
-            <TabsTrigger value="standup">Standup</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          </TabsList>
-          <TabsContent value="standup"></TabsContent>
-          <TabsContent value="feedback">
-            <AdminEmployeeFeedback sheet={employee.ratings_sheet_link} />
-          </TabsContent>
-          <TabsContent value="attendance">Attendance</TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+    <>
+      <AppNavbar />
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle>{employee.name}</CardTitle>
+          <CardDescription>{employee.email}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="feedback" className="flex flex-col items-center justify-center">
+            <TabsList className="grid w-full grid-cols-3 max-w-96">
+              <TabsTrigger value="standup">Standup</TabsTrigger>
+              <TabsTrigger value="feedback">Feedback</TabsTrigger>
+              <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            </TabsList>
+            <TabsContent value="standup"></TabsContent>
+            <TabsContent value="feedback">
+              <AdminEmployeeFeedback sheet={employee.ratings_sheet_link} />
+            </TabsContent>
+            <TabsContent value="attendance">Attendance</TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 

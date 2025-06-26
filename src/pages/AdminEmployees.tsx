@@ -26,12 +26,23 @@ type Employee = {
   id: string;
   name: string;
   email: string;
+  employee_id: string; // Assuming this is a unique identifier for the employee
+  ratings_sheet_link: string;
 };
 
 const fetchEmployees = async (): Promise<Employee[]> => {
   const { data, error } = await supabase.from("employees").select();
   if (error) throw error;
-  return data || [];
+  // Ensure all required fields are present, provide defaults if missing
+  return (
+    data?.map((emp: Employee) => ({
+      id: emp.id,
+      name: emp.name,
+      email: emp.email,
+      employee_id: emp.employee_id ?? "",
+      ratings_sheet_link: emp.ratings_sheet_link ?? "",
+    })) || []
+  );
 };
 
 const addEmployee = async (employee: { name: string; email: string }): Promise<void> => {
@@ -378,7 +389,7 @@ export default function AdminEmployees() {
                       <tr
                         key={emp.id}
                         className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/admin/employees/${emp.id}`)}
+                        onClick={() => navigate(`/admin/employees/${emp.employee_id}`)}
                       >
                         <td className="px-4 py-3">
                           {editingEmployeeId === emp.id ? (
