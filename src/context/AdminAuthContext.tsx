@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 
 type Admin = { email: string };
@@ -7,7 +6,7 @@ type Credentials = { email: string; password: string };
 const ADMIN_CREDENTIALS: Credentials[] = [
   { email: "akhil", password: "admin123" },
   { email: "abhinav", password: "admin" },
-  { email: "sowmya", password: "admin123" }
+  { email: "sowmya", password: "admin123" },
 ];
 
 type AdminAuthContextType = {
@@ -25,9 +24,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   });
 
   const login = (email: string, password: string) => {
-    const found = ADMIN_CREDENTIALS.find(
-      (c) => c.email === email && c.password === password
-    );
+    const found = ADMIN_CREDENTIALS.find((c) => c.email === email && c.password === password);
     if (found) {
       setAdmin({ email });
       localStorage.setItem("admin", JSON.stringify({ email }));
@@ -41,11 +38,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     localStorage.removeItem("admin");
   };
 
-  return (
-    <AdminAuthContext.Provider value={{ admin, login, logout }}>
-      {children}
-    </AdminAuthContext.Provider>
-  );
+  return <AdminAuthContext.Provider value={{ admin, login, logout }}>{children}</AdminAuthContext.Provider>;
 };
 
 export const useAdminAuth = () => {

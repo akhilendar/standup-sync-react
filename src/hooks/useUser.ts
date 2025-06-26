@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
@@ -20,7 +19,9 @@ export function useUser() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setProfile(null);
@@ -43,17 +44,15 @@ export function useUser() {
       }
     });
 
-    return () => { subscription.unsubscribe(); };
+    return () => {
+      subscription.unsubscribe();
+    };
     // eslint-disable-next-line
   }, []);
 
   const fetchProfile = async (id: string) => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+    const { data, error } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
     if (data) setProfile(data as Profile);
     setLoading(false);
   };
@@ -62,15 +61,10 @@ export function useUser() {
   const updateProfile = async ({ name, avatar_url }: { name?: string; avatar_url?: string }) => {
     if (!user) return;
     setLoading(true);
-    const updates: any = {};
+    const updates: Record<string, string> = {};
     if (name !== undefined) updates.name = name;
     if (avatar_url !== undefined) updates.avatar_url = avatar_url;
-    const { error, data } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", user.id)
-      .select()
-      .maybeSingle();
+    const { error, data } = await supabase.from("profiles").update(updates).eq("id", user.id).select().maybeSingle();
     if (!error && data) setProfile(data as Profile);
     setLoading(false);
     return { error };
@@ -82,7 +76,7 @@ export function useUser() {
     const filePath = `${user.id}/${Date.now()}_${file.name}`;
     const { error } = await supabase.storage.from("avatars").upload(filePath, file, {
       upsert: true,
-      cacheControl: "3600"
+      cacheControl: "3600",
     });
     if (error) return { error: error.message };
 

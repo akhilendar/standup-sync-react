@@ -12,6 +12,7 @@ import AdminHome from "./pages/AdminHome";
 import AdminEmployees from "./pages/AdminEmployees";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 import AuthPage from "./pages/AuthPage";
+import AdminEmployeePage from "./pages/AdminEmployeePage";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/admin" element={<AdminHome />} />
             <Route path="/admin/employees" element={<AdminEmployees />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/admin/employees/:id" element={<AdminEmployeePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

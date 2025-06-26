@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@/hooks/useUser";
@@ -31,13 +30,26 @@ export function useAttendanceStreak() {
         setAttendanceLoading(false);
         return;
       }
+
+      type AttendanceRecord = {
+        status: string;
+        standups?: {
+          scheduled_at: string;
+        } | null;
+      };
+
+      type MappedAttendance = {
+        status: string;
+        scheduled_at: string;
+      };
       const sortedAtt = data
-        .map((att: any) => ({
+        .map((att) => ({
           status: att.status,
+          // @ts-expect-error - standups is not always present
           scheduled_at: att.standups?.scheduled_at,
         }))
-        .filter((att: any) => att.scheduled_at)
-        .sort((a: any, b: any) => (a.scheduled_at > b.scheduled_at ? -1 : 1));
+        .filter((att): att is MappedAttendance => att.scheduled_at !== undefined)
+        .sort((a: { scheduled_at: string }, b: { scheduled_at: string }) => (a.scheduled_at > b.scheduled_at ? -1 : 1));
       let streak = 0;
       for (let i = 0; i < sortedAtt.length; i++) {
         if (sortedAtt[i].status === "Present") {

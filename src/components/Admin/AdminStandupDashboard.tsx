@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,10 +100,7 @@ const AdminStandupDashboard: React.FC = () => {
   React.useEffect(() => {
     if (!todayStandup || (!start && !finalized)) return;
     const fetchAttendance = async () => {
-      const { data } = await supabase
-        .from("attendance")
-        .select("*")
-        .eq("standup_id", todayStandup.id);
+      const { data } = await supabase.from("attendance").select("*").eq("standup_id", todayStandup.id);
       if (data) {
         const attMap: Record<string, Attendance> = {};
         data.forEach((row: Attendance) => {
@@ -119,10 +115,7 @@ const AdminStandupDashboard: React.FC = () => {
   const scheduledDate = todayStandup ? new Date(todayStandup.scheduled_at) : null;
   const now = new Date();
 
-  const canStart =
-    todayStandup && scheduledDate
-      ? now.getTime() >= scheduledDate.getTime()
-      : false;
+  const canStart = todayStandup && scheduledDate ? now.getTime() >= scheduledDate.getTime() : false;
 
   // Updated - sync after changes
   const syncSheet = React.useCallback(() => {
@@ -155,7 +148,7 @@ const AdminStandupDashboard: React.FC = () => {
 
     // Insert attendance rows for each employee if not already present
     const inserts = [];
-    for (let emp of employees) {
+    for (const emp of employees) {
       if (!attendance[emp.id]) {
         inserts.push({
           standup_id: todayStandup.id,
@@ -227,19 +220,20 @@ const AdminStandupDashboard: React.FC = () => {
     <Card className="mt-8">
       <CardHeader>
         <CardTitle>
-          Standup for {scheduledDate?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} on {scheduledDate?.toLocaleDateString()}
+          Standup for {scheduledDate?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} on{" "}
+          {scheduledDate?.toLocaleDateString()}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {!start && !finalized ? (
           <Button onClick={handleStart} disabled={loading || employees.length === 0 || !canStart}>
-            {canStart ? "Start Standup" : `Start available at ${scheduledDate?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+            {canStart
+              ? "Start Standup"
+              : `Start available at ${scheduledDate?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
           </Button>
         ) : (
           <>
-            <div className="mb-2 font-semibold">
-              Mark attendance:
-            </div>
+            <div className="mb-2 font-semibold">Mark attendance:</div>
             <div className="space-y-2">
               {employees.map((emp) => (
                 <div key={emp.id} className="flex items-center gap-2">
@@ -249,7 +243,9 @@ const AdminStandupDashboard: React.FC = () => {
                     onCheckedChange={() => handleCheckbox(emp.id)}
                     id={`attendance-${emp.id}`}
                   />
-                  <label htmlFor={`attendance-${emp.id}`}>{emp.name} ({emp.email})</label>
+                  <label htmlFor={`attendance-${emp.id}`}>
+                    {emp.name} ({emp.email})
+                  </label>
                 </div>
               ))}
             </div>
@@ -262,8 +258,7 @@ const AdminStandupDashboard: React.FC = () => {
             </div>
             {finalized && (
               <div className="mt-4 border-t pt-3 font-semibold">
-                Present:{" "}
-                {Object.values(attendance).filter((a) => a.status === "Present").length} / {employees.length}
+                Present: {Object.values(attendance).filter((a) => a.status === "Present").length} / {employees.length}
               </div>
             )}
           </>

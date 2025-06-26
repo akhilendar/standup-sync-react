@@ -7,7 +7,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import HomeStreakBanner from "@/components/HomeStreakBanner";
 import AuthModeChooser from "@/components/AuthModeChooser";
 import TeamMemberAuthCard from "@/components/TeamMemberAuthCard";
-import AdminAuthCard from "@/components/AdminAuthCard";
+import AdminAuthCard from "@/components/Admin/AdminAuthCard";
 import { useAttendanceStreak } from "@/hooks/useAttendanceStreak";
 import { supabase } from "@/integrations/supabase/client";
 import AppNavbar from "@/components/AppNavbar";
@@ -89,7 +89,7 @@ export default function Index() {
         options: {
           data: { name },
           emailRedirectTo: redirectUrl,
-        }
+        },
       });
       if (error) setError(error.message);
       else setError("Check your inbox for confirmation.");
@@ -103,7 +103,7 @@ export default function Index() {
     const redirectTo = `${window.location.origin}/`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo }
+      options: { redirectTo },
     });
     if (error) setError(error.message);
     setLoadingForm(false);
@@ -120,9 +120,7 @@ export default function Index() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center text-lg font-semibold text-muted-foreground">
-          Loading...
-        </div>
+        <div className="text-center text-lg font-semibold text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -142,7 +140,7 @@ export default function Index() {
                 <Button
                   size="lg"
                   className="w-full font-bold"
-                  onClick={() => window.location.href = "/standups"}
+                  onClick={() => (window.location.href = "/standups")}
                   data-testid="schedule-standup-home-btn"
                 >
                   Schedule Standup
@@ -167,9 +165,7 @@ export default function Index() {
         <div className="w-full max-w-sm">
           {entryMode === EntryMode.Choose && (
             <AuthModeChooser
-              onChoose={(choice) =>
-                setEntryMode(choice === "TeamMember" ? EntryMode.TeamMember : EntryMode.Admin)
-              }
+              onChoose={(choice) => setEntryMode(choice === "TeamMember" ? EntryMode.TeamMember : EntryMode.Admin)}
             />
           )}
           {entryMode === EntryMode.TeamMember && (
@@ -186,11 +182,7 @@ export default function Index() {
               onSubmit={handleTeamMemberSubmit}
               onGoogle={handleGoogleLogin}
               onSwitchMode={() =>
-                setTmMode(
-                  tmMode === TeamMemberAuthMode.Login
-                    ? TeamMemberAuthMode.Signup
-                    : TeamMemberAuthMode.Login
-                )
+                setTmMode(tmMode === TeamMemberAuthMode.Login ? TeamMemberAuthMode.Signup : TeamMemberAuthMode.Login)
               }
               onBack={() => setEntryMode(EntryMode.Choose)}
             />

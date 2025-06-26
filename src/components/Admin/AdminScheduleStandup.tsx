@@ -26,10 +26,7 @@ export default function AdminScheduleStandup({ onAfterSchedule }: AdminScheduleS
 
   const fetchStandups = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("standups")
-      .select("*")
-      .order("scheduled_at", { ascending: true });
+    const { data, error } = await supabase.from("standups").select("*").order("scheduled_at", { ascending: true });
     if (error) {
       toast({ title: "Error loading standups", description: error.message, variant: "destructive" });
       console.error("Error fetching standups:", error);
@@ -66,7 +63,7 @@ export default function AdminScheduleStandup({ onAfterSchedule }: AdminScheduleS
     today.setHours(hours, minutes, 0, 0);
     const scheduled_at = today.toISOString();
 
-    let insertObj: any = { scheduled_at };
+    const insertObj: { scheduled_at: string; created_by?: string } = { scheduled_at };
     if (profile?.id) {
       insertObj.created_by = profile.id;
     }
@@ -94,8 +91,8 @@ export default function AdminScheduleStandup({ onAfterSchedule }: AdminScheduleS
 
   const setToNowTime = () => {
     const now = new Date();
-    const hour = now.getHours().toString().padStart(2,"0");
-    const minute = now.getMinutes().toString().padStart(2,"0");
+    const hour = now.getHours().toString().padStart(2, "0");
+    const minute = now.getMinutes().toString().padStart(2, "0");
     setTime(`${hour}:${minute}`);
   };
 
@@ -111,25 +108,34 @@ export default function AdminScheduleStandup({ onAfterSchedule }: AdminScheduleS
             <Input
               type="time"
               value={time}
-              onChange={e => setTime(e.target.value)}
+              onChange={(e) => setTime(e.target.value)}
               required
               className="ml-2 w-28"
               min="06:00"
               max="23:00"
               data-testid="schedule-time-input"
             />
-            <Button type="button" size="sm" className="ml-2" variant="ghost" onClick={setToNowTime} data-testid="now-btn">
+            <Button
+              type="button"
+              size="sm"
+              className="ml-2"
+              variant="ghost"
+              onClick={setToNowTime}
+              data-testid="now-btn"
+            >
               Now
             </Button>
           </div>
-          <Button type="submit" disabled={loading} data-testid="add-btn">Add</Button>
+          <Button type="submit" disabled={loading} data-testid="add-btn">
+            Add
+          </Button>
         </form>
         <h4 className="font-semibold mb-2">All Scheduled Standups:</h4>
         {loading ? (
           <div>Loading...</div>
         ) : (
           <ul className="space-y-2">
-            {standups.map(su => (
+            {standups.map((su) => (
               <li key={su.id} className="flex justify-between border-b py-2">
                 <span>
                   {(() => {

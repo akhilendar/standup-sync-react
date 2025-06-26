@@ -1,86 +1,3 @@
-// import React from "react";
-// import { useNavigate } from "react-router-dom";
-// import { useAdminAuth } from "@/context/AdminAuthContext";
-// import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import AppNavbar from "@/components/AppNavbar";
-// import { supabase } from "@/integrations/supabase/client";
-
-// type Employee = {
-//   id: string;
-//   name: string;
-//   email: string;
-//   // add extra fields if needed in the future
-// };
-
-// const fetchEmployees = async (): Promise<Employee[]> => {
-//   const { data, error } = await supabase.from("employees").select();
-//   if (error) throw error;
-//   return data || [];
-// };
-
-// export default function AdminEmployees() {
-//   const { admin } = useAdminAuth();
-//   const navigate = useNavigate();
-//   const [employees, setEmployees] = React.useState<Employee[] | null>(null);
-//   const [loading, setLoading] = React.useState(true);
-//   const [error, setError] = React.useState<string | null>(null);
-
-//   React.useEffect(() => {
-//     if (!admin) {
-//       navigate("/admin/login");
-//       return;
-//     }
-//     setLoading(true);
-//     setError(null);
-//     fetchEmployees()
-//       .then(setEmployees)
-//       .catch((e) => setError(e.message || "Error fetching employees"))
-//       .finally(() => setLoading(false));
-//   }, [admin, navigate]);
-
-//   return (
-//     <div className="min-h-screen flex flex-col bg-background">
-//       <AppNavbar />
-//       <div className="flex-1 flex flex-col items-center py-10">
-//         <Card className="w-full max-w-3xl">
-//           <CardHeader>
-//             <div className="flex items-center justify-between">
-//               <CardTitle>Manage Employees</CardTitle>
-//               <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>Back</Button>
-//             </div>
-//           </CardHeader>
-//           <CardContent>
-//             {loading && <div>Loading employees...</div>}
-//             {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-//             {employees && (
-//               <table className="w-full table-auto border mt-2">
-//                 <thead>
-//                   <tr className="bg-muted/40">
-//                     <th className="text-left px-4 py-2">Name</th>
-//                     <th className="text-left px-4 py-2">Email</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {employees.map((emp) => (
-//                     <tr key={emp.id} className="border-b last:border-0">
-//                       <td className="px-4 py-2">{emp.name}</td>
-//                       <td className="px-4 py-2">{emp.email}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             )}
-//             {employees && employees.length === 0 && (
-//               <div>No employees found.</div>
-//             )}
-//           </CardContent>
-//         </Card>
-//       </div>
-//     </div>
-//   );
-// }
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "@/context/AdminAuthContext";
@@ -89,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -123,22 +34,13 @@ const fetchEmployees = async (): Promise<Employee[]> => {
   return data || [];
 };
 
-const addEmployee = async (employee: {
-  name: string;
-  email: string;
-}): Promise<void> => {
+const addEmployee = async (employee: { name: string; email: string }): Promise<void> => {
   const { error } = await supabase.from("employees").insert(employee);
   if (error) throw error;
 };
 
-const updateEmployee = async (
-  id: string,
-  employee: { name: string; email: string }
-): Promise<void> => {
-  const { error } = await supabase
-    .from("employees")
-    .update(employee)
-    .eq("id", id);
+const updateEmployee = async (id: string, employee: { name: string; email: string }): Promise<void> => {
+  const { error } = await supabase.from("employees").update(employee).eq("id", id);
   if (error) throw error;
 };
 
@@ -161,9 +63,7 @@ export default function AdminEmployees() {
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = React.useState(false);
-  const [editingEmployeeId, setEditingEmployeeId] = React.useState<
-    string | null
-  >(null);
+  const [editingEmployeeId, setEditingEmployeeId] = React.useState<string | null>(null);
   const [editFormData, setEditFormData] = React.useState<{
     [key: string]: { name: string; email: string };
   }>({});
@@ -211,10 +111,11 @@ export default function AdminEmployees() {
       setAddFormData({ name: "", email: "" });
       setIsAddDialogOpen(false);
       loadEmployees();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to add employee";
       toast({
         title: "Error",
-        description: error.message || "Failed to add employee",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -239,11 +140,7 @@ export default function AdminEmployees() {
     });
   };
 
-  const updateInlineField = (
-    employeeId: string,
-    field: "name" | "email",
-    value: string
-  ) => {
+  const updateInlineField = (employeeId: string, field: "name" | "email", value: string) => {
     setEditFormData((prev) => ({
       ...prev,
       [employeeId]: {
@@ -255,11 +152,7 @@ export default function AdminEmployees() {
 
   const handleSaveInlineEdit = async (employeeId: string) => {
     const employeeData = editFormData[employeeId];
-    if (
-      !employeeData ||
-      !employeeData.name.trim() ||
-      !employeeData.email.trim()
-    ) {
+    if (!employeeData || !employeeData.name.trim() || !employeeData.email.trim()) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -283,10 +176,11 @@ export default function AdminEmployees() {
         return newData;
       });
       loadEmployees();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update employee";
       toast({
         title: "Error",
-        description: error.message || "Failed to update employee",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -306,10 +200,11 @@ export default function AdminEmployees() {
         className: "bg-green-500 text-white",
       });
       loadEmployees();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete employee";
       toast({
         title: "Error",
-        description: error.message || "Failed to delete employee",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -334,10 +229,7 @@ export default function AdminEmployees() {
                 Manage Employees {employees ? `(${employees.length})` : ""}
               </CardTitle>
               <div className="flex flex-wrap gap-2">
-                <Dialog
-                  open={isAddDialogOpen}
-                  onOpenChange={setIsAddDialogOpen}
-                >
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
                     <Button
                       variant="default"
@@ -351,9 +243,7 @@ export default function AdminEmployees() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                      <DialogTitle className="text-lg font-semibold">
-                        Add New Employee
-                      </DialogTitle>
+                      <DialogTitle className="text-lg font-semibold">Add New Employee</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleAddEmployee} className="space-y-4">
                       <div className="space-y-2">
@@ -404,11 +294,7 @@ export default function AdminEmployees() {
                         >
                           Cancel
                         </Button>
-                        <Button
-                          type="submit"
-                          disabled={isAdding}
-                          className="min-w-[120px]"
-                        >
+                        <Button type="submit" disabled={isAdding} className="min-w-[120px]">
                           {isAdding ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -429,9 +315,7 @@ export default function AdminEmployees() {
                   disabled={!employees || employees.length === 0}
                   onClick={toggleEditMode}
                   aria-pressed={isEditMode}
-                  aria-label={
-                    isEditMode ? "Exit edit mode" : "Enable edit mode"
-                  }
+                  aria-label={isEditMode ? "Exit edit mode" : "Enable edit mode"}
                   className={
                     isEditMode
                       ? "bg-blue-600 hover:bg-blue-700 text-white transition-colors"
@@ -478,22 +362,13 @@ export default function AdminEmployees() {
                   <caption className="sr-only">List of employees</caption>
                   <thead>
                     <tr className="bg-muted/40 border-b">
-                      <th
-                        scope="col"
-                        className="text-left px-4 py-3 font-medium text-gray-900 dark:text-white"
-                      >
+                      <th scope="col" className="text-left px-4 py-3 font-medium text-gray-900 dark:text-white">
                         Name
                       </th>
-                      <th
-                        scope="col"
-                        className="text-left px-4 py-3 font-medium text-gray-900 dark:text-white"
-                      >
+                      <th scope="col" className="text-left px-4 py-3 font-medium text-gray-900 dark:text-white">
                         Email
                       </th>
-                      <th
-                        scope="col"
-                        className="text-right px-4 py-3 font-medium text-gray-900 dark:text-white"
-                      >
+                      <th scope="col" className="text-right px-4 py-3 font-medium text-gray-900 dark:text-white">
                         Actions
                       </th>
                     </tr>
@@ -502,70 +377,49 @@ export default function AdminEmployees() {
                     {employees.map((emp) => (
                       <tr
                         key={emp.id}
-                        className="border-b last:border-0 hover:bg-muted/50 transition-colors"
+                        className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/admin/employees/${emp.id}`)}
                       >
                         <td className="px-4 py-3">
                           {editingEmployeeId === emp.id ? (
                             <div className="space-y-1">
-                              <Label
-                                htmlFor={`name-${emp.id}`}
-                                className="sr-only"
-                              >
+                              <Label htmlFor={`name-${emp.id}`} className="sr-only">
                                 Name
                               </Label>
                               <Input
                                 id={`name-${emp.id}`}
                                 value={editFormData[emp.id]?.name || emp.name}
-                                onChange={(e) =>
-                                  updateInlineField(
-                                    emp.id,
-                                    "name",
-                                    e.target.value
-                                  )
-                                }
+                                onChange={(e) => updateInlineField(emp.id, "name", e.target.value)}
                                 className="h-8 text-sm"
                                 placeholder="Employee Name"
                                 aria-label="Edit employee name"
                               />
                             </div>
                           ) : (
-                            <span className="font-medium text-gray-900 dark:text-white">
-                              {emp.name}
-                            </span>
+                            <span className="font-medium text-gray-900 dark:text-white">{emp.name}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {editingEmployeeId === emp.id ? (
                             <div className="space-y-1">
-                              <Label
-                                htmlFor={`email-${emp.id}`}
-                                className="sr-only"
-                              >
+                              <Label htmlFor={`email-${emp.id}`} className="sr-only">
                                 Email
                               </Label>
                               <Input
                                 id={`email-${emp.id}`}
                                 type="email"
                                 value={editFormData[emp.id]?.email || emp.email}
-                                onChange={(e) =>
-                                  updateInlineField(
-                                    emp.id,
-                                    "email",
-                                    e.target.value
-                                  )
-                                }
+                                onChange={(e) => updateInlineField(emp.id, "email", e.target.value)}
                                 className="h-8 text-sm"
                                 placeholder="Employee Email"
                                 aria-label="Edit employee email"
                               />
                             </div>
                           ) : (
-                            <span className="text-gray-700 dark:text-gray-300">
-                              {emp.email}
-                            </span>
+                            <span className="text-gray-700 dark:text-gray-300">{emp.email}</span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-2">
                             {isEditMode && (
                               <>
@@ -582,9 +436,7 @@ export default function AdminEmployees() {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      onClick={() =>
-                                        handleSaveInlineEdit(emp.id)
-                                      }
+                                      onClick={() => handleSaveInlineEdit(emp.id)}
                                       disabled={isUpdating}
                                       aria-label="Save changes"
                                     >
@@ -617,33 +469,21 @@ export default function AdminEmployees() {
 
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  aria-label={`Delete ${emp.name}`}
-                                >
+                                <Button variant="destructive" size="sm" aria-label={`Delete ${emp.name}`}>
                                   <Trash2 className="h-4 w-4" />
                                   <span className="sr-only">Delete</span>
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-lg">
-                                    Are you absolutely sure?
-                                  </AlertDialogTitle>
+                                  <AlertDialogTitle className="text-lg">Are you absolutely sure?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This action cannot be undone. This will
-                                    permanently delete{" "}
-                                    <span className="font-semibold">
-                                      {emp.name}
-                                    </span>{" "}
-                                    from the database.
+                                    This action cannot be undone. This will permanently delete{" "}
+                                    <span className="font-semibold">{emp.name}</span> from the database.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel className="mt-0">
-                                    Cancel
-                                  </AlertDialogCancel>
+                                  <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleDeleteEmployee(emp.id)}
                                     disabled={isDeleting}

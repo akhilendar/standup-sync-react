@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import AppNavbar from "@/components/AppNavbar";
-import AdminScheduleStandup from "@/components/AdminScheduleStandup";
+import AdminScheduleStandup from "@/components/Admin/AdminScheduleStandup";
 import { supabase } from "@/integrations/supabase/client";
 import "./Attendance.css";
 
@@ -36,10 +35,7 @@ export default function Standups() {
     setStandup(standupData || null);
     if (standupData) {
       // Fetch attendance for this standup
-      const { data: attData } = await supabase
-        .from("attendance")
-        .select("*")
-        .eq("standup_id", standupData.id);
+      const { data: attData } = await supabase.from("attendance").select("*").eq("standup_id", standupData.id);
       const map: Record<string, Attendance> = {};
       attData?.forEach((a) => {
         map[a.employee_id] = a;
@@ -65,15 +61,11 @@ export default function Standups() {
   const handleStartStandup = () => {
     setStandupStarted(true);
     setEditing(true);
-    setEditedAttendance(
-      Object.fromEntries(
-        employees.map(emp => [emp.id, attendance[emp.id]?.status === "Present"])
-      )
-    );
+    setEditedAttendance(Object.fromEntries(employees.map((emp) => [emp.id, attendance[emp.id]?.status === "Present"])));
   };
 
   const handleAttendanceCheck = (empId: string, checked: boolean) => {
-    setEditedAttendance(prev => ({ ...prev, [empId]: checked }));
+    setEditedAttendance((prev) => ({ ...prev, [empId]: checked }));
   };
 
   const handleStopStandup = async () => {
@@ -88,9 +80,7 @@ export default function Standups() {
           .eq("employee_id", emp.id)
           .eq("standup_id", standup.id);
       } else {
-        await supabase.from("attendance").insert([
-          { standup_id: standup.id, employee_id: emp.id, status: empStatus },
-        ]);
+        await supabase.from("attendance").insert([{ standup_id: standup.id, employee_id: emp.id, status: empStatus }]);
       }
     }
     await fetchData();
@@ -100,26 +90,31 @@ export default function Standups() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(120deg, #e6eafc 0%, #c8eafc 50%, #f1f4f9 100%)" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "linear-gradient(120deg, #e6eafc 0%, #c8eafc 50%, #f1f4f9 100%)",
+      }}
+    >
       <AppNavbar />
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ width: "100%", maxWidth: 620 }}>
           {/* 1. No standup for today: Show ONLY schedule section */}
-          {!standup && (
-            <AdminScheduleStandup onAfterSchedule={handleScheduleReload} />
-          )}
+          {!standup && <AdminScheduleStandup onAfterSchedule={handleScheduleReload} />}
 
           {/* 2. Standup scheduled for today */}
           {standup && !standupStarted && !standupCompleted && (
-            <div className="card-style" style={{ maxWidth: 520, margin: "40px auto 0", textAlign: "center", padding: 32 }}>
+            <div
+              className="card-style"
+              style={{ maxWidth: 520, margin: "40px auto 0", textAlign: "center", padding: 32 }}
+            >
               <h2 style={{ marginBottom: 18 }}>Today's Standup</h2>
               <div className="banner" style={{ background: "#e6f7ff", color: "#096", margin: "0 0 20px 0" }}>
                 Standup scheduled for today.
               </div>
-              <button
-                className="btn-style py-2 px-7 text-lg rounded"
-                onClick={handleStartStandup}
-              >
+              <button className="btn-style py-2 px-7 text-lg rounded" onClick={handleStartStandup}>
                 Start Standup
               </button>
             </div>
@@ -131,7 +126,7 @@ export default function Standups() {
               <h2 style={{ marginBottom: 16 }}>Mark Attendance</h2>
               <div style={{ marginTop: 12, fontWeight: 600, color: "#267", marginBottom: 12 }}>People</div>
               <ul style={{ paddingLeft: 0, margin: 0 }}>
-                {employees.map(emp => (
+                {employees.map((emp) => (
                   <li
                     key={emp.id}
                     style={{
@@ -140,20 +135,20 @@ export default function Standups() {
                       marginBottom: 12,
                       fontWeight: 500,
                       color: editedAttendance[emp.id] ? "#20af6e" : "#cb9620",
-                      fontSize: "1.025rem"
+                      fontSize: "1.025rem",
                     }}
                   >
                     <input
                       type="checkbox"
                       checked={!!editedAttendance[emp.id]}
-                      onChange={e => handleAttendanceCheck(emp.id, e.target.checked)}
+                      onChange={(e) => handleAttendanceCheck(emp.id, e.target.checked)}
                       disabled={!editing}
                       style={{
                         marginRight: 12,
                         accentColor: "#20af6e",
                         width: "20px",
                         height: "20px",
-                        cursor: editing ? "pointer" : "default"
+                        cursor: editing ? "pointer" : "default",
                       }}
                     />
                     <span>{emp.name}</span>
@@ -162,7 +157,15 @@ export default function Standups() {
               </ul>
               <button
                 className="btn-style"
-                style={{ marginTop: 30, background: "#18ae7a", color: "white", fontWeight: 700, fontSize: "1rem", padding: "10px 26px", borderRadius: 11 }}
+                style={{
+                  marginTop: 30,
+                  background: "#18ae7a",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "1rem",
+                  padding: "10px 26px",
+                  borderRadius: 11,
+                }}
                 onClick={handleStopStandup}
               >
                 Stop
@@ -174,7 +177,10 @@ export default function Standups() {
           {standup && standupCompleted && (
             <div className="card-style" style={{ maxWidth: 520, margin: "30px auto 0" }}>
               <h1 style={{ marginBottom: 13 }}>Team Standups</h1>
-              <div className="banner" style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}>
+              <div
+                className="banner"
+                style={{ color: "#088", marginTop: 0, background: "linear-gradient(90deg,#eefff9 0%,#e8f5fa 80%)" }}
+              >
                 Standup completed for today!
               </div>
               <div style={{ marginTop: 18, color: "#238", fontWeight: 400, fontSize: "1.04rem" }}>
@@ -184,7 +190,7 @@ export default function Standups() {
                 <div style={{ fontWeight: 600, color: "#267", marginBottom: 10, fontSize: "1.08rem" }}>People</div>
                 <div>
                   <ul style={{ paddingLeft: 0, margin: 0 }}>
-                    {employees.map(emp => {
+                    {employees.map((emp) => {
                       const present = attendance[emp.id]?.status === "Present";
                       return (
                         <li
@@ -195,7 +201,7 @@ export default function Standups() {
                             marginBottom: 9,
                             fontWeight: 500,
                             color: present ? "#20af6e" : "#cb9620",
-                            fontSize: "1.025rem"
+                            fontSize: "1.025rem",
                           }}
                         >
                           <input
@@ -208,7 +214,7 @@ export default function Standups() {
                               accentColor: present ? "#11b26b" : "#beae6c",
                               width: "18px",
                               height: "18px",
-                              cursor: "default"
+                              cursor: "default",
                             }}
                           />
                           <span>{emp.name}</span>

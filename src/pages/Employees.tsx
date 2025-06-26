@@ -5,15 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHead,
-} from "@/components/ui/table";
-import React from "react";
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from "@/components/ui/table";
 
 type Employee = {
   id: string;
@@ -28,10 +20,7 @@ export default function Employees() {
   const { data: employees, isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("employees")
-        .select("*")
-        .order("name", { ascending: true });
+      const { data, error } = await supabase.from("employees").select("*").order("name", { ascending: true });
       if (error) throw error;
       return data as Employee[];
     },
@@ -47,7 +36,7 @@ export default function Employees() {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       toast({ title: "Employee added!" });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({ title: "Error", description: err.message });
     },
   });
@@ -71,19 +60,9 @@ export default function Employees() {
           <CardTitle>Add Employee</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={handleSubmit(onSubmit)}
-          >
-            <Input
-              placeholder="Name"
-              {...register("name", { required: true })}
-            />
-            <Input
-              placeholder="Email"
-              type="email"
-              {...register("email", { required: true })}
-            />
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+            <Input placeholder="Name" {...register("name", { required: true })} />
+            <Input placeholder="Email" type="email" {...register("email", { required: true })} />
             <Button type="submit" disabled={isPending}>
               {isPending ? "Adding..." : "Add Employee"}
             </Button>
