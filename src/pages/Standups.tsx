@@ -45,7 +45,10 @@ export default function Standups() {
         map[a.employee_id] = a;
       });
       setAttendance(map);
-      setStandupCompleted(attData && attData.length === empData?.length && attData.length > 0);
+      // Check if completed - must have attendance data for all employees and at least one employee
+      const hasAllAttendance = empData && empData.length > 0 && attData && attData.length === empData.length;
+      const hasAnyAttendance = attData && attData.length > 0;
+      setStandupCompleted(hasAllAttendance && hasAnyAttendance);
     } else {
       setAttendance({});
       setStandupCompleted(false);
@@ -109,7 +112,7 @@ export default function Standups() {
             <AdminScheduleStandup onAfterSchedule={handleScheduleReload} />
           )}
 
-          {/* 2. Standup scheduled for today */}
+          {/* 2. Standup scheduled for today but not started and not completed */}
           {standup && !standupStarted && !standupCompleted && (
             <div className="card-style" style={{ maxWidth: 520, margin: "40px auto 0", textAlign: "center", padding: 32 }}>
               <h2 style={{ marginBottom: 18 }}>Today's Standup</h2>
@@ -218,7 +221,7 @@ export default function Standups() {
                   </ul>
                 </div>
                 <div className="banner" style={{ background: "#e5ffe5", color: "#159f46", marginTop: 16 }}>
-                  Standup completed!
+                  Standup completed! Admins can edit attendance in the Standup Attendance page.
                 </div>
               </div>
             </div>

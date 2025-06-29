@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Menu, X, User, LogOut, Users, Calendar, ClipboardList, BookOpen, GraduationCap } from 'lucide-react';
+import { Menu, X, User, LogOut, Users, Calendar, ClipboardList, BookOpen, GraduationCap, UserCheck } from 'lucide-react';
 import ChangePassword from './ChangePassword';
 
 const AppNavbar: React.FC = () => {
@@ -32,7 +32,7 @@ const AppNavbar: React.FC = () => {
 
   const isAdmin = admin || profile?.role === 'admin';
   const currentUser = admin || profile;
-  const userName = admin?.email || profile?.name || 'User'; // Use email for admin since they don't have name
+  const userName = admin?.email || profile?.name || 'User';
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
   const avatarUrl = profile?.avatar_url;
 
@@ -62,8 +62,8 @@ const AppNavbar: React.FC = () => {
                 to="/attendance"
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
               >
-                <ClipboardList size={18} />
-                Attendance
+                <UserCheck size={18} />
+                Standup Attendance
               </Link>
               <Link
                 to="/learning-hours"
@@ -153,7 +153,7 @@ const AppNavbar: React.FC = () => {
                 className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
                 onClick={() => setIsOpen(false)}
               >
-                Attendance
+                Standup Attendance
               </Link>
               <Link
                 to="/learning-hours"
