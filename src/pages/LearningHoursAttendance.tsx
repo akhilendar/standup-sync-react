@@ -108,7 +108,7 @@ export default function LearningHoursAttendance() {
     setEditedAtt({});
     setEditing(false);
 
-    // Google Sheets sync with LH Attendance sheet
+    // Google Sheets sync with correct LH Attendance URL
     const dataToSend = employees.map((emp) => ({
       learning_hour_id: learningHour.id,
       learning_hour_time: new Date(learningHour.scheduled_at).toLocaleString(),
@@ -168,7 +168,7 @@ export default function LearningHoursAttendance() {
 
     try {
       await fetch(
-        "https://script.google.com/macros/s/AKfycbyCNKuhbU7Ks5yqUgu_0Zn3r0Ca72YBlkNtZNFafYs1See6w8KKaKxS-pX9P8n5Ln7EXg/exec",
+        "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
         {
           method: "POST",
           mode: "no-cors",

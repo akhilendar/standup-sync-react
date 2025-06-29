@@ -96,6 +96,32 @@ export default function Standups() {
         ]);
       }
     }
+
+    // Sync to Google Sheets with Standup Attendance sheet
+    const dataToSend = employees.map((emp) => ({
+      standup_id: standup.id,
+      standup_time: new Date(standup.scheduled_at).toLocaleString(),
+      employee_id: emp.employee_id,
+      employee_name: emp.name,
+      employee_email: emp.email,
+      status: editedAttendance[emp.employee_id] ? "Present" : "Missed",
+      sheet_type: "Standup Attendance"
+    }));
+    
+    try {
+      await fetch(
+        "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec",
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records: dataToSend }),
+        }
+      );
+    } catch (error) {
+      console.error("Error syncing Standup to Google Sheets:", error);
+    }
+
     await fetchData();
     setStandupStarted(false);
     setEditing(false);
