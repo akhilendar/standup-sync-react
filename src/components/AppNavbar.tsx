@@ -32,7 +32,7 @@ const AppNavbar: React.FC = () => {
 
   const isAdmin = admin || profile?.role === 'admin';
   const currentUser = admin || profile;
-  const userName = admin?.name || profile?.name || 'User';
+  const userName = admin?.email || profile?.name || 'User'; // Use email for admin since they don't have name
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
   const avatarUrl = profile?.avatar_url;
 

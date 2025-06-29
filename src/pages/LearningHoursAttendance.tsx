@@ -6,7 +6,7 @@ import AppNavbar from "@/components/AppNavbar";
 import { toast } from "@/components/ui/use-toast";
 import "./Attendance.css";
 
-type Employee = { id: string; name: string; email: string };
+type Employee = { employee_id: string; name: string; email: string };
 type LearningHourAttendance = { employee_id: string; status: string | null };
 
 export default function LearningHoursAttendance() {
@@ -51,7 +51,7 @@ export default function LearningHoursAttendance() {
   const handleEdit = () => {
     const initial: Record<string, string> = {};
     employees.forEach((emp) => {
-      initial[emp.id] = attendance[emp.id]?.status || "Missed";
+      initial[emp.employee_id] = attendance[emp.employee_id]?.status || "Missed";
     });
     setEditedAtt(initial);
     setEditing(true);
@@ -80,8 +80,8 @@ export default function LearningHoursAttendance() {
     const bulk = employees.map((emp) => {
       return {
         learning_hour_id: learningHour.id,
-        employee_id: emp.id,
-        status: editedAtt[emp.id] || "Missed",
+        employee_id: emp.employee_id,
+        status: editedAtt[emp.employee_id] || "Missed",
       };
     });
 
@@ -112,10 +112,10 @@ export default function LearningHoursAttendance() {
     const dataToSend = employees.map((emp) => ({
       learning_hour_id: learningHour.id,
       learning_hour_time: new Date(learningHour.scheduled_at).toLocaleString(),
-      employee_id: emp.id,
+      employee_id: emp.employee_id,
       employee_name: emp.name,
       employee_email: emp.email,
-      status: map[emp.id]?.status || "Missed",
+      status: map[emp.employee_id]?.status || "Missed",
       sheet_type: "LH Attendance"
     }));
 
@@ -159,10 +159,10 @@ export default function LearningHoursAttendance() {
     const dataToSend = employees.map((emp) => ({
       learning_hour_id: learningHour.id,
       learning_hour_time: new Date(learningHour.scheduled_at).toLocaleString(),
-      employee_id: emp.id,
+      employee_id: emp.employee_id,
       employee_name: emp.name,
       employee_email: emp.email,
-      status: attendance[emp.id]?.status || "Missed",
+      status: attendance[emp.employee_id]?.status || "Missed",
       sheet_type: "LH Attendance"
     }));
 
@@ -193,7 +193,7 @@ export default function LearningHoursAttendance() {
 
   const totalEmployees = employees.length;
   const presentCount = employees.filter(
-    (emp) => (editing ? editedAtt[emp.id] : attendance[emp.id]?.status) === "Present"
+    (emp) => (editing ? editedAtt[emp.employee_id] : attendance[emp.employee_id]?.status) === "Present"
   ).length;
 
   return (
@@ -265,19 +265,19 @@ export default function LearningHoursAttendance() {
                   <tbody>
                     {employees.map((emp) => (
                       <tr
-                        key={emp.id}
+                        key={emp.employee_id}
                         className={
                           editing
-                            ? editedAtt[emp.id] === "Present"
+                            ? editedAtt[emp.employee_id] === "Present"
                               ? "table-row-present"
-                              : editedAtt[emp.id] === "Missed"
+                              : editedAtt[emp.employee_id] === "Missed"
                               ? "table-row-missed"
                               : "table-row-absent"
-                            : attendance[emp.id]?.status === "Present"
+                            : attendance[emp.employee_id]?.status === "Present"
                             ? "table-row-present"
-                            : attendance[emp.id]?.status === "Missed"
+                            : attendance[emp.employee_id]?.status === "Missed"
                             ? "table-row-missed"
-                            : attendance[emp.id]?.status === "Absent"
+                            : attendance[emp.employee_id]?.status === "Absent"
                             ? "table-row-absent"
                             : "table-row-absent"
                         }
@@ -296,17 +296,17 @@ export default function LearningHoursAttendance() {
                                 fontSize: "0.96rem",
                                 outline: "none",
                               }}
-                              value={editedAtt[emp.id] || "Missed"}
-                              onChange={(e) => handleChange(emp.id, e.target.value)}
-                              data-testid={`status-select-${emp.id}`}
+                              value={editedAtt[emp.employee_id] || "Missed"}
+                              onChange={(e) => handleChange(emp.employee_id, e.target.value)}
+                              data-testid={`status-select-${emp.employee_id}`}
                             >
                               <option value="Present">Present</option>
                               <option value="Missed">Missed</option>
                               <option value="Absent">Absent</option>
                               <option value="Not Available">Not Available</option>
                             </select>
-                          ) : attendance[emp.id]?.status ? (
-                            attendance[emp.id]?.status
+                          ) : attendance[emp.employee_id]?.status ? (
+                            attendance[emp.employee_id]?.status
                           ) : (
                             <span style={{ color: "#be8808" }}>Missed</span>
                           )}

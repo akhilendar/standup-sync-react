@@ -5,7 +5,7 @@ import AdminScheduleStandup from "@/components/AdminScheduleStandup";
 import { supabase } from "@/integrations/supabase/client";
 import "./Attendance.css";
 
-type Employee = { id: string; name: string; email: string };
+type Employee = { employee_id: string; name: string; email: string };
 type Attendance = { employee_id: string; status: string | null };
 type Standup = { id: string; scheduled_at: string };
 
@@ -67,7 +67,7 @@ export default function Standups() {
     setEditing(true);
     setEditedAttendance(
       Object.fromEntries(
-        employees.map(emp => [emp.id, attendance[emp.id]?.status === "Present"])
+        employees.map(emp => [emp.employee_id, attendance[emp.employee_id]?.status === "Present"])
       )
     );
   };
@@ -79,17 +79,17 @@ export default function Standups() {
   const handleStopStandup = async () => {
     if (!standup) return;
     for (const emp of employees) {
-      const empStatus = editedAttendance[emp.id] ? "Present" : "Missed";
-      const found = attendance[emp.id];
+      const empStatus = editedAttendance[emp.employee_id] ? "Present" : "Missed";
+      const found = attendance[emp.employee_id];
       if (found) {
         await supabase
           .from("attendance")
           .update({ status: empStatus })
-          .eq("employee_id", emp.id)
+          .eq("employee_id", emp.employee_id)
           .eq("standup_id", standup.id);
       } else {
         await supabase.from("attendance").insert([
-          { standup_id: standup.id, employee_id: emp.id, status: empStatus },
+          { standup_id: standup.id, employee_id: emp.employee_id, status: empStatus },
         ]);
       }
     }
@@ -133,20 +133,20 @@ export default function Standups() {
               <ul style={{ paddingLeft: 0, margin: 0 }}>
                 {employees.map(emp => (
                   <li
-                    key={emp.id}
+                    key={emp.employee_id}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       marginBottom: 12,
                       fontWeight: 500,
-                      color: editedAttendance[emp.id] ? "#20af6e" : "#cb9620",
+                      color: editedAttendance[emp.employee_id] ? "#20af6e" : "#cb9620",
                       fontSize: "1.025rem"
                     }}
                   >
                     <input
                       type="checkbox"
-                      checked={!!editedAttendance[emp.id]}
-                      onChange={e => handleAttendanceCheck(emp.id, e.target.checked)}
+                      checked={!!editedAttendance[emp.employee_id]}
+                      onChange={e => handleAttendanceCheck(emp.employee_id, e.target.checked)}
                       disabled={!editing}
                       style={{
                         marginRight: 12,
@@ -185,10 +185,10 @@ export default function Standups() {
                 <div>
                   <ul style={{ paddingLeft: 0, margin: 0 }}>
                     {employees.map(emp => {
-                      const present = attendance[emp.id]?.status === "Present";
+                      const present = attendance[emp.employee_id]?.status === "Present";
                       return (
                         <li
-                          key={emp.id}
+                          key={emp.employee_id}
                           style={{
                             display: "flex",
                             alignItems: "center",
