@@ -1,85 +1,3 @@
-// import React from "react";
-// import { useNavigate } from "react-router-dom";
-// import { useAdminAuth } from "@/context/AdminAuthContext";
-// import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import AppNavbar from "@/components/AppNavbar";
-// import { supabase } from "@/integrations/supabase/client";
-
-// type Employee = {
-//   id: string;
-//   name: string;
-//   email: string;
-//   // add extra fields if needed in the future
-// };
-
-// const fetchEmployees = async (): Promise<Employee[]> => {
-//   const { data, error } = await supabase.from("employees").select();
-//   if (error) throw error;
-//   return data || [];
-// };
-
-// export default function AdminEmployees() {
-//   const { admin } = useAdminAuth();
-//   const navigate = useNavigate();
-//   const [employees, setEmployees] = React.useState<Employee[] | null>(null);
-//   const [loading, setLoading] = React.useState(true);
-//   const [error, setError] = React.useState<string | null>(null);
-
-//   React.useEffect(() => {
-//     if (!admin) {
-//       navigate("/admin/login");
-//       return;
-//     }
-//     setLoading(true);
-//     setError(null);
-//     fetchEmployees()
-//       .then(setEmployees)
-//       .catch((e) => setError(e.message || "Error fetching employees"))
-//       .finally(() => setLoading(false));
-//   }, [admin, navigate]);
-
-//   return (
-//     <div className="min-h-screen flex flex-col bg-background">
-//       <AppNavbar />
-//       <div className="flex-1 flex flex-col items-center py-10">
-//         <Card className="w-full max-w-3xl">
-//           <CardHeader>
-//             <div className="flex items-center justify-between">
-//               <CardTitle>Manage Employees</CardTitle>
-//               <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>Back</Button>
-//             </div>
-//           </CardHeader>
-//           <CardContent>
-//             {loading && <div>Loading employees...</div>}
-//             {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-//             {employees && (
-//               <table className="w-full table-auto border mt-2">
-//                 <thead>
-//                   <tr className="bg-muted/40">
-//                     <th className="text-left px-4 py-2">Name</th>
-//                     <th className="text-left px-4 py-2">Email</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {employees.map((emp) => (
-//                     <tr key={emp.id} className="border-b last:border-0">
-//                       <td className="px-4 py-2">{emp.name}</td>
-//                       <td className="px-4 py-2">{emp.email}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             )}
-//             {employees && employees.length === 0 && (
-//               <div>No employees found.</div>
-//             )}
-//           </CardContent>
-//         </Card>
-//       </div>
-//     </div>
-//   );
-// }
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
@@ -112,9 +30,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Edit, Trash2, Plus, Check, X, Loader2 } from "lucide-react";
 
 type Employee = {
-  id: string;
+  employee_id: string;
   name: string;
   email: string;
+  role?: string;
 };
 
 const fetchEmployees = async (): Promise<Employee[]> => {
@@ -127,23 +46,28 @@ const addEmployee = async (employee: {
   name: string;
   email: string;
 }): Promise<void> => {
-  const { error } = await supabase.from("employees").insert(employee);
+  const { error } = await supabase.from("employees").insert({
+    employee_id: crypto.randomUUID(),
+    name: employee.name,
+    email: employee.email,
+    role: 'member'
+  });
   if (error) throw error;
 };
 
 const updateEmployee = async (
-  id: string,
+  employee_id: string,
   employee: { name: string; email: string }
 ): Promise<void> => {
   const { error } = await supabase
     .from("employees")
     .update(employee)
-    .eq("id", id);
+    .eq("employee_id", employee_id);
   if (error) throw error;
 };
 
-const deleteEmployee = async (id: string): Promise<void> => {
-  const { error } = await supabase.from("employees").delete().eq("id", id);
+const deleteEmployee = async (employee_id: string): Promise<void> => {
+  const { error } = await supabase.from("employees").delete().eq("employee_id", employee_id);
   if (error) throw error;
 };
 
@@ -223,10 +147,10 @@ export default function AdminEmployees() {
   };
 
   const startInlineEdit = (employee: Employee) => {
-    setEditingEmployeeId(employee.id);
+    setEditingEmployeeId(employee.employee_id);
     setEditFormData((prev) => ({
       ...prev,
-      [employee.id]: { name: employee.name, email: employee.email },
+      [employee.employee_id]: { name: employee.name, email: employee.email },
     }));
   };
 
@@ -294,12 +218,10 @@ export default function AdminEmployees() {
     }
   };
 
-  console.log(employees);
-
-  const handleDeleteEmployee = async (id: string) => {
+  const handleDeleteEmployee = async (employee_id: string) => {
     setIsDeleting(true);
     try {
-      await deleteEmployee(id);
+      await deleteEmployee(employee_id);
       toast({
         title: "Success",
         description: "Employee deleted successfully!",
@@ -501,24 +423,24 @@ export default function AdminEmployees() {
                   <tbody>
                     {employees.map((emp) => (
                       <tr
-                        key={emp.id}
+                        key={emp.employee_id}
                         className="border-b last:border-0 hover:bg-muted/50 transition-colors"
                       >
                         <td className="px-4 py-3">
-                          {editingEmployeeId === emp.id ? (
+                          {editingEmployeeId === emp.employee_id ? (
                             <div className="space-y-1">
                               <Label
-                                htmlFor={`name-${emp.id}`}
+                                htmlFor={`name-${emp.employee_id}`}
                                 className="sr-only"
                               >
                                 Name
                               </Label>
                               <Input
-                                id={`name-${emp.id}`}
-                                value={editFormData[emp.id]?.name || emp.name}
+                                id={`name-${emp.employee_id}`}
+                                value={editFormData[emp.employee_id]?.name || emp.name}
                                 onChange={(e) =>
                                   updateInlineField(
-                                    emp.id,
+                                    emp.employee_id,
                                     "name",
                                     e.target.value
                                   )
@@ -535,21 +457,21 @@ export default function AdminEmployees() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {editingEmployeeId === emp.id ? (
+                          {editingEmployeeId === emp.employee_id ? (
                             <div className="space-y-1">
                               <Label
-                                htmlFor={`email-${emp.id}`}
+                                htmlFor={`email-${emp.employee_id}`}
                                 className="sr-only"
                               >
                                 Email
                               </Label>
                               <Input
-                                id={`email-${emp.id}`}
+                                id={`email-${emp.employee_id}`}
                                 type="email"
-                                value={editFormData[emp.id]?.email || emp.email}
+                                value={editFormData[emp.employee_id]?.email || emp.email}
                                 onChange={(e) =>
                                   updateInlineField(
-                                    emp.id,
+                                    emp.employee_id,
                                     "email",
                                     e.target.value
                                   )
@@ -569,12 +491,12 @@ export default function AdminEmployees() {
                           <div className="flex justify-end gap-2">
                             {isEditMode && (
                               <>
-                                {editingEmployeeId === emp.id ? (
+                                {editingEmployeeId === emp.employee_id ? (
                                   <>
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => cancelInlineEdit(emp.id)}
+                                      onClick={() => cancelInlineEdit(emp.employee_id)}
                                       aria-label="Cancel editing"
                                     >
                                       <X className="h-4 w-4 mr-1" />
@@ -583,7 +505,7 @@ export default function AdminEmployees() {
                                     <Button
                                       size="sm"
                                       onClick={() =>
-                                        handleSaveInlineEdit(emp.id)
+                                        handleSaveInlineEdit(emp.employee_id)
                                       }
                                       disabled={isUpdating}
                                       aria-label="Save changes"
@@ -645,7 +567,7 @@ export default function AdminEmployees() {
                                     Cancel
                                   </AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleDeleteEmployee(emp.id)}
+                                    onClick={() => handleDeleteEmployee(emp.employee_id)}
                                     disabled={isDeleting}
                                     className="bg-destructive hover:bg-destructive/90"
                                   >

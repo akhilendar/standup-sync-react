@@ -9,13 +9,14 @@ import { toast } from "@/hooks/use-toast";
 // NEW UTILITY FUNCTION FOR SHEET SYNC
 const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycby8F_q7tY_HuIHwsMpSRYXcbEsXx3mwW69EZAE_fepk2S5w01xeubMRKG084kNBICNb7Q/exec";
+
 async function syncAttendanceToSheet({
   standup,
   employees,
   attendance,
 }: {
   standup: { id: string; scheduled_at: string };
-  employees: { id: string; name: string; email: string }[];
+  employees: { employee_id: string; name: string; email: string }[];
   attendance: Record<
     string,
     {
@@ -30,13 +31,14 @@ async function syncAttendanceToSheet({
     const dataToSend = employees.map((emp) => ({
       standup_id: standup.id,
       standup_time: new Date(standup.scheduled_at).toLocaleString(),
-      employee_id: emp.id,
+      employee_id: emp.employee_id,
       employee_name: emp.name,
       employee_email: emp.email,
-      status: attendance[emp.id]?.status || "Absent",
+      status: attendance[emp.employee_id]?.status || "Absent",
     }));
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
+      mode: "no-cors",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ records: dataToSend }),
     });
@@ -52,7 +54,7 @@ async function syncAttendanceToSheet({
 }
 
 type Employee = {
-  id: string;
+  employee_id: string;
   name: string;
   email: string;
 };
@@ -142,7 +144,7 @@ const AdminStandupDashboard: React.FC = () => {
         standupTime: todayStandup.scheduled_at,
         attendance: employees.map((emp) => ({
           ...emp,
-          status: attendance[emp.id]?.status || "Absent",
+          status: attendance[emp.employee_id]?.status || "Absent",
         })),
       };
       localStorage.setItem("standup_attendance_details", JSON.stringify(details));
@@ -156,10 +158,10 @@ const AdminStandupDashboard: React.FC = () => {
     // Insert attendance rows for each employee if not already present
     const inserts = [];
     for (let emp of employees) {
-      if (!attendance[emp.id]) {
+      if (!attendance[emp.employee_id]) {
         inserts.push({
           standup_id: todayStandup.id,
-          employee_id: emp.id,
+          employee_id: emp.employee_id,
           status: "Absent",
         });
       }
@@ -242,14 +244,14 @@ const AdminStandupDashboard: React.FC = () => {
             </div>
             <div className="space-y-2">
               {employees.map((emp) => (
-                <div key={emp.id} className="flex items-center gap-2">
+                <div key={emp.employee_id} className="flex items-center gap-2">
                   <Checkbox
-                    checked={attendance[emp.id]?.status === "Present"}
+                    checked={attendance[emp.employee_id]?.status === "Present"}
                     disabled={finalized}
-                    onCheckedChange={() => handleCheckbox(emp.id)}
-                    id={`attendance-${emp.id}`}
+                    onCheckedChange={() => handleCheckbox(emp.employee_id)}
+                    id={`attendance-${emp.employee_id}`}
                   />
-                  <label htmlFor={`attendance-${emp.id}`}>{emp.name} ({emp.email})</label>
+                  <label htmlFor={`attendance-${emp.employee_id}`}>{emp.name} ({emp.email})</label>
                 </div>
               ))}
             </div>
