@@ -7,14 +7,14 @@ import { toast } from "@/components/ui/use-toast";
 import "./Attendance.css";
 
 type Employee = { id: string; name: string; email: string };
-type Attendance = { employee_id: string; status: string | null };
+type LearningHourAttendance = { employee_id: string; status: string | null };
 
-export default function Attendance() {
+export default function LearningHoursAttendance() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [attendance, setAttendance] = useState<Record<string, Attendance>>({});
+  const [attendance, setAttendance] = useState<Record<string, LearningHourAttendance>>({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [editedAtt, setEditedAtt] = useState<Record<string, string>>({}); // id -> status
+  const [editedAtt, setEditedAtt] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -23,17 +23,17 @@ export default function Attendance() {
       const { data: empData } = await supabase.from("employees").select("*");
       setEmployees(empData || []);
       const todayStr = new Date().toISOString().slice(0, 10);
-      const { data: standup } = await supabase
-        .from("standups")
+      const { data: learningHour } = await supabase
+        .from("learning_hours")
         .select("*")
         .gte("scheduled_at", todayStr + "T00:00:00.000Z")
         .lt("scheduled_at", todayStr + "T23:59:59.999Z")
         .order("scheduled_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (standup) {
-        const { data: attData } = await supabase.from("attendance").select("*").eq("standup_id", standup.id);
-        const map: Record<string, Attendance> = {};
+      if (learningHour) {
+        const { data: attData } = await supabase.from("learning_hours_attendance").select("*").eq("learning_hour_id", learningHour.id);
+        const map: Record<string, LearningHourAttendance> = {};
         attData?.forEach((a) => {
           map[a.employee_id] = a;
         });
@@ -48,7 +48,6 @@ export default function Attendance() {
     fetchData();
   }, []);
 
-  // Handler: initiate edit mode
   const handleEdit = () => {
     const initial: Record<string, string> = {};
     employees.forEach((emp) => {
@@ -58,67 +57,68 @@ export default function Attendance() {
     setEditing(true);
   };
 
-  // Handler: Change status in edit mode
   const handleChange = (empId: string, val: string) => {
     setEditedAtt((prev) => ({ ...prev, [empId]: val }));
   };
 
-  // Save edited attendance to DB (insert or update)
   const handleSave = async () => {
     setLoading(true);
     const todayStr = new Date().toISOString().slice(0, 10);
-    // Find today's standup
-    const { data: standup } = await supabase
-      .from("standups")
+    const { data: learningHour } = await supabase
+      .from("learning_hours")
       .select("*")
       .gte("scheduled_at", todayStr + "T00:00:00.000Z")
       .lt("scheduled_at", todayStr + "T23:59:59.999Z")
       .order("scheduled_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (!standup) {
+    if (!learningHour) {
       setLoading(false);
       return;
     }
-    // Upsert attendance for each employee
+
     const bulk = employees.map((emp) => {
       return {
-        standup_id: standup.id,
+        learning_hour_id: learningHour.id,
         employee_id: emp.id,
         status: editedAtt[emp.id] || "Missed",
       };
     });
+
     for (const row of bulk) {
       const found = attendance[row.employee_id];
       if (found) {
         await supabase
-          .from("attendance")
+          .from("learning_hours_attendance")
           .update({ status: row.status })
           .eq("employee_id", row.employee_id)
-          .eq("standup_id", row.standup_id);
+          .eq("learning_hour_id", row.learning_hour_id);
       } else {
-        await supabase.from("attendance").insert([{ ...row }]);
+        await supabase.from("learning_hours_attendance").insert([{ ...row }]);
       }
     }
-    // After saving, reload state from DB
-    const { data: attData } = await supabase.from("attendance").select("*").eq("standup_id", standup.id);
-    const map: Record<string, Attendance> = {};
+
+    // Reload attendance after saving
+    const { data: attData } = await supabase.from("learning_hours_attendance").select("*").eq("learning_hour_id", learningHour.id);
+    const map: Record<string, LearningHourAttendance> = {};
     attData?.forEach((a) => {
       map[a.employee_id] = a;
     });
     setAttendance(map);
     setEditedAtt({});
     setEditing(false);
-    // Google Sheets sync with Standup Attendance sheet
+
+    // Google Sheets sync with LH Attendance sheet
     const dataToSend = employees.map((emp) => ({
-      standup_id: standup.id,
-      standup_time: new Date(standup.scheduled_at).toLocaleString(),
+      learning_hour_id: learningHour.id,
+      learning_hour_time: new Date(learningHour.scheduled_at).toLocaleString(),
       employee_id: emp.id,
       employee_name: emp.name,
       employee_email: emp.email,
       status: map[emp.id]?.status || "Missed",
-      sheet_type: "Standup Attendance"
+      sheet_type: "LH Attendance"
     }));
+
     try {
       await fetch(
         "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
@@ -135,21 +135,21 @@ export default function Attendance() {
     setLoading(false);
   };
 
-  // Modified handleSyncSheet:
   const handleSyncSheet = async () => {
     setLoading(true);
     const todayStr = new Date().toISOString().slice(0, 10);
-    const { data: standup } = await supabase
-      .from("standups")
+    const { data: learningHour } = await supabase
+      .from("learning_hours")
       .select("*")
       .gte("scheduled_at", todayStr + "T00:00:00.000Z")
       .lt("scheduled_at", todayStr + "T23:59:59.999Z")
       .order("scheduled_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (!standup) {
+
+    if (!learningHour) {
       toast({
-        title: "No standup found for today.",
+        title: "No learning hour found for today.",
         variant: "destructive",
       });
       setLoading(false);
@@ -157,16 +157,17 @@ export default function Attendance() {
     }
 
     const dataToSend = employees.map((emp) => ({
-      standup_id: standup.id,
-      standup_time: new Date(standup.scheduled_at).toLocaleString(),
+      learning_hour_id: learningHour.id,
+      learning_hour_time: new Date(learningHour.scheduled_at).toLocaleString(),
       employee_id: emp.id,
       employee_name: emp.name,
       employee_email: emp.email,
       status: attendance[emp.id]?.status || "Missed",
-      sheet_type: "Standup Attendance"
+      sheet_type: "LH Attendance"
     }));
+
     try {
-      const res = await fetch(
+      await fetch(
         "https://script.google.com/macros/s/AKfycbyCNKuhbU7Ks5yqUgu_0Zn3r0Ca72YBlkNtZNFafYs1See6w8KKaKxS-pX9P8n5Ln7EXg/exec",
         {
           method: "POST",
@@ -190,7 +191,6 @@ export default function Attendance() {
     setLoading(false);
   };
 
-  // Compute counts
   const totalEmployees = employees.length;
   const presentCount = employees.filter(
     (emp) => (editing ? editedAtt[emp.id] : attendance[emp.id]?.status) === "Present"
@@ -208,7 +208,7 @@ export default function Attendance() {
         }}
       >
         <div className="card-style" style={{ maxWidth: 700 }}>
-          <h1 style={{ marginBottom: 18 }}>Attendance</h1>
+          <h1 style={{ marginBottom: 18 }}>Learning Hours Attendance</h1>
           <button className="btn-style" onClick={handleSyncSheet} disabled={loading}>
             Resync to Google Sheet
           </button>
@@ -233,8 +233,7 @@ export default function Attendance() {
                   fontSize: "1.05rem",
                 }}
               >
-                <span>Today's Attendance</span>
-                {/* Attendance count */}
+                <span>Today's Learning Hours Attendance</span>
                 <span style={{ marginLeft: 20, color: "#188d4c", fontWeight: 800 }}>
                   Present: {presentCount} / {totalEmployees}
                 </span>

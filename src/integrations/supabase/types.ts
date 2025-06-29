@@ -40,7 +40,14 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
-            referencedColumns: ["id"]
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey1"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "attendance_standup_id_fkey"
@@ -54,20 +61,89 @@ export type Database = {
       employees: {
         Row: {
           email: string
-          id: string
+          employee_id: string
           name: string
+          ratings_sheet_link: string | null
+          role: string | null
         }
         Insert: {
           email: string
-          id?: string
+          employee_id: string
           name: string
+          ratings_sheet_link?: string | null
+          role?: string | null
         }
         Update: {
           email?: string
-          id?: string
+          employee_id?: string
           name?: string
+          ratings_sheet_link?: string | null
+          role?: string | null
         }
         Relationships: []
+      }
+      learning_hours: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          scheduled_at: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          scheduled_at: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          scheduled_at?: string
+        }
+        Relationships: []
+      }
+      learning_hours_attendance: {
+        Row: {
+          employee_id: string | null
+          id: string
+          learning_hour_id: string | null
+          marked_at: string | null
+          marked_by: string | null
+          status: string | null
+        }
+        Insert: {
+          employee_id?: string | null
+          id?: string
+          learning_hour_id?: string | null
+          marked_at?: string | null
+          marked_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          employee_id?: string | null
+          id?: string
+          learning_hour_id?: string | null
+          marked_at?: string | null
+          marked_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_hours_attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "learning_hours_attendance_learning_hour_id_fkey"
+            columns: ["learning_hour_id"]
+            isOneToOne: false
+            referencedRelation: "learning_hours"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -116,6 +192,50 @@ export type Database = {
           scheduled_at?: string
         }
         Relationships: []
+      }
+      worklog_categories: {
+        Row: {
+          id: number
+          name: string | null
+          type: string | null
+        }
+        Insert: {
+          id?: number
+          name?: string | null
+          type?: string | null
+        }
+        Update: {
+          id?: number
+          name?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
+      worklog_subcategory: {
+        Row: {
+          category_id: number | null
+          id: number
+          name: string | null
+        }
+        Insert: {
+          category_id?: number | null
+          id?: number
+          name?: string | null
+        }
+        Update: {
+          category_id?: number | null
+          id?: number
+          name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worklog_subcategory_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "worklog_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

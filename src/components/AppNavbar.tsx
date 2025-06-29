@@ -1,114 +1,232 @@
 
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useUser } from "@/hooks/useUser";
-import ProfileEditor from "./ProfileEditor";
-import React from "react";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUser } from '@/hooks/useUser';
+import { useAdminAuth } from '@/context/AdminAuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { useAdminAuth } from "@/context/AdminAuthContext";
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Menu, X, User, LogOut, Users, Calendar, ClipboardList, BookOpen, GraduationCap } from 'lucide-react';
+import ChangePassword from './ChangePassword';
 
-// Do not define Employees link; only show for admin
-const links = [
-  { path: "/", label: "Home" },
-  { path: "/standups", label: "Standups" },
-  { path: "/attendance", label: "Attendance" }
-];
-
-export default function AppNavbar() {
-  const { pathname } = useLocation();
-  const { profile, loading, logout: memberLogout } = useUser();
+const AppNavbar: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const { user, profile, logout } = useUser();
   const { admin, logout: adminLogout } = useAdminAuth();
-  const [showProfile, setShowProfile] = React.useState(false);
+  const navigate = useNavigate();
 
-  // Get current user information (profile/avatar) from either admin or member
-  const isLoggedIn = !!profile || !!admin;
-  const displayName = profile?.name || admin?.email || "User";
-  const displayAvatar = profile?.avatar_url || undefined;
-
-  // Combined logout handler
-  const handleLogout = () => {
-    if (admin) adminLogout();
-    if (profile) memberLogout();
+  const handleLogout = async () => {
+    if (admin) {
+      adminLogout();
+    } else {
+      await logout();
+    }
+    navigate('/');
   };
 
-  // Determine if current user is an admin
-  const isAdmin = !!admin;
+  const isAdmin = admin || profile?.role === 'admin';
+  const currentUser = admin || profile;
+  const userName = admin?.name || profile?.name || 'User';
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
+  const avatarUrl = profile?.avatar_url;
+
+  const toggleMobile = () => setIsOpen(!isOpen);
 
   return (
-    <nav className="w-full flex justify-center bg-background border-b">
-      <ul className="flex gap-4 py-4">
-        {links.map(({ path, label }) => (
-          <li key={path}>
-            <Link
-              to={path}
-              className={cn(
-                "py-2 px-3 rounded hover:bg-muted/40 transition-colors",
-                pathname === path && "font-semibold bg-muted"
+    <>
+      <nav className="bg-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Link to="/" className="flex-shrink-0 flex items-center">
+                <span className="text-xl font-bold text-gray-900">TeamSync</span>
+              </Link>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link
+                to="/standups"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+              >
+                <Calendar size={18} />
+                Standups
+              </Link>
+              <Link
+                to="/attendance"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+              >
+                <ClipboardList size={18} />
+                Attendance
+              </Link>
+              <Link
+                to="/learning-hours"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+              >
+                <BookOpen size={18} />
+                Learning Hours
+              </Link>
+              <Link
+                to="/learning-hours-attendance"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+              >
+                <GraduationCap size={18} />
+                LH Attendance
+              </Link>
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/admin"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+                  >
+                    <Users size={18} />
+                    Admin
+                  </Link>
+                  <Link
+                    to="/admin/employees"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+                  >
+                    <Users size={18} />
+                    Employees
+                  </Link>
+                </>
               )}
-            >
-              {label}
-            </Link>
-          </li>
-        ))}
-        {/* Show Employees tab only for admin */}
-        {isAdmin && (
-          <li>
-            <Link
-              to="/admin/employees"
-              className={cn(
-                "py-2 px-3 rounded hover:bg-muted/40 transition-colors",
-                pathname === "/admin/employees" && "font-semibold bg-muted"
-              )}
-            >
-              Employees
-            </Link>
-          </li>
-        )}
-        {!loading && isLoggedIn && (
-          <li>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex items-center gap-2 px-2 text-muted-foreground hover:bg-muted/30 rounded transition-colors"
-                >
-                  {displayAvatar ? (
-                    <img
-                      src={displayAvatar}
-                      alt={displayName}
-                      className="w-8 h-8 rounded-full object-cover border"
-                    />
-                  ) : (
-                    <span className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-muted-foreground font-bold">
-                      {displayName?.slice(0, 1).toUpperCase() ?? "U"}
-                    </span>
-                  )}
-                  <span className="hidden md:inline">{displayName}</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {profile && (
-                  <>
-                    <DropdownMenuItem onClick={() => setShowProfile(true)}>
-                      Change username / image
+            </div>
+
+            {/* User Avatar and Dropdown */}
+            {currentUser && (
+              <div className="hidden md:flex items-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={avatarUrl || undefined} alt={userName} />
+                        <AvatarFallback>{userInitials}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuItem className="flex items-center" onClick={() => setShowChangePassword(true)}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Change Password</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <ProfileEditor open={showProfile} onOpenChange={setShowProfile} />
-          </li>
+                    <DropdownMenuItem className="flex items-center" onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+
+            {/* Mobile menu button */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={toggleMobile}
+                className="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600 p-2"
+              >
+                {isOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50">
+              <Link
+                to="/standups"
+                className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Standups
+              </Link>
+              <Link
+                to="/attendance"
+                className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Attendance
+              </Link>
+              <Link
+                to="/learning-hours"
+                className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Learning Hours
+              </Link>
+              <Link
+                to="/learning-hours-attendance"
+                className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                LH Attendance
+              </Link>
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/admin"
+                    className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                  <Link
+                    to="/admin/employees"
+                    className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Employees
+                  </Link>
+                </>
+              )}
+              {currentUser && (
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex items-center px-3 py-2">
+                    <Avatar className="h-8 w-8 mr-3">
+                      <AvatarImage src={avatarUrl || undefined} alt={userName} />
+                      <AvatarFallback>{userInitials}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-gray-700 text-base font-medium">{userName}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowChangePassword(true);
+                      setIsOpen(false);
+                    }}
+                    className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium w-full text-left"
+                  >
+                    Change Password
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium w-full text-left"
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
-      </ul>
-    </nav>
+      </nav>
+
+      <ChangePassword 
+        isOpen={showChangePassword} 
+        onClose={() => setShowChangePassword(false)} 
+      />
+    </>
   );
-}
+};
+
+export default AppNavbar;
