@@ -121,7 +121,7 @@ export default function Attendance() {
     }));
     try {
       await fetch(
-        "https://script.google.com/macros/s/AKfycbyfGUpUJ7sLxScWTVQwxQTC5YGqxysEVODH00y6VbzfOjfjThVJXfcJNkqfEvcT2WL34g/exec",
+        "https://script.google.com/macros/s/AKfycbyowj2Myb4i3kfuadKsP_sWK7Vx28N33lu9xmAhFl6vUoooEai2IpTpDtF5gGjqViGZWg/exec",
         {
           method: "POST",
           mode: "no-cors",
@@ -167,7 +167,7 @@ export default function Attendance() {
     }));
     try {
       await fetch(
-        "https://script.google.com/macros/s/AKfycbyCNKuhbU7Ks5yqUgu_0Zn3r0Ca72YBlkNtZNFafYs1See6w8KKaKxS-pX9P8n5Ln7EXg/exec",
+        "https://script.google.com/macros/s/AKfycbyowj2Myb4i3kfuadKsP_sWK7Vx28N33lu9xmAhFl6vUoooEai2IpTpDtF5gGjqViGZWg/exec",
         {
           method: "POST",
           mode: "no-cors",
